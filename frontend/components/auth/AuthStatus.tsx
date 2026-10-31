@@ -44,6 +44,12 @@ export default function AuthStatus() {
       <span dir="ltr" className="hidden text-slate-600 sm:inline">
         {me.masked_phone}
       </span>
+      <Link
+        href={me.is_nafath_verified ? "/account/broker-profile" : "/account/verify"}
+        className="font-medium whitespace-nowrap text-emerald-700 hover:underline"
+      >
+        {t("account")}
+      </Link>
       <button
         type="button"
         onClick={logout}

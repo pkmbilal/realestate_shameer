@@ -1,6 +1,7 @@
-"""Phone OTP login: request a code by SMS, then exchange it for a logged-in user."""
+"""Phone OTP login, and Nafath identity verification for people who post listings."""
 
 import hashlib
+import re
 import secrets
 from datetime import timedelta
 
@@ -12,9 +13,10 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from integrations.nafath import NafathStatus, get_nafath_client
 from integrations.sms import get_sms_client
 
-from .models import OtpCode, User
+from .models import NafathVerification, OtpCode, User
 from .phone import normalize_phone
 
 
@@ -96,3 +98,62 @@ def verify_otp(raw_phone: str, code: str) -> User:
         raise OtpError("account_disabled")
     update_last_login(None, user)
     return user
+
+
+# --- Nafath verification ---------------------------------------------------------
+
+# Saudi national ID (starts with 1) or iqama number (starts with 2).
+NATIONAL_ID_RE = re.compile(r"^[12]\d{9}$")
+
+
+class NafathError(Exception):
+    """A verification problem the user can see. `code` is a stable key the frontend translates."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+
+
+def start_nafath_verification(user: User, national_id: str) -> tuple[NafathVerification, str]:
+    """Ask Nafath to verify the user. Returns the record and the number to show on screen.
+
+    The national ID goes to Nafath only: it is not stored, logged or returned.
+    """
+    if not NATIONAL_ID_RE.match(national_id or ""):
+        raise NafathError("invalid_national_id")
+    if user.is_nafath_verified:
+        raise NafathError("already_verified")
+
+    request = get_nafath_client().start(national_id)
+    with transaction.atomic():
+        # Only the newest request counts.
+        user.nafath_verifications.filter(status=NafathVerification.Status.PENDING).update(
+            status=NafathVerification.Status.EXPIRED
+        )
+        verification = NafathVerification.objects.create(
+            user=user, transaction_ref=request.transaction_ref
+        )
+    return verification, request.random_number
+
+
+def check_nafath_verification(user: User, transaction_ref: str) -> NafathVerification:
+    """Refresh a pending request from Nafath. Safe to call repeatedly (the page polls it)."""
+    with transaction.atomic():
+        verification = (
+            NafathVerification.objects.select_for_update()
+            .filter(user=user, transaction_ref=transaction_ref)
+            .first()
+        )
+        if verification is None:
+            raise NafathError("not_found")
+        if verification.status != NafathVerification.Status.PENDING:
+            return verification
+
+        result = get_nafath_client().status(transaction_ref)
+        if result == NafathStatus.PENDING:
+            return verification
+        verification.status = NafathVerification.Status(result.value)
+        if result == NafathStatus.APPROVED:
+            verification.verified_at = timezone.now()
+        verification.save(update_fields=["status", "verified_at"])
+    return verification

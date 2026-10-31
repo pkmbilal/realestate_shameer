@@ -15,7 +15,8 @@
   },
   "Auth": {
     "login": "Log in",
-    "logout": "Log out"
+    "logout": "Log out",
+    "account": "For brokers"
   },
   "Login": {
     "title": "Log in",
@@ -38,5 +39,52 @@
       "account_disabled": "This account has been disabled. Please contact support.",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "Verify": {
+    "title": "Verify your identity",
+    "intro": "Brokers, agencies and owners must verify their identity with Nafath before posting listings.",
+    "nationalIdLabel": "National ID or Iqama number",
+    "nationalIdHint": "10 digits. It is sent to Nafath only; we do not store it.",
+    "submit": "Verify with Nafath",
+    "openApp": "Open the Nafath app and tap this number:",
+    "waiting": "Waiting for your approval in Nafath…",
+    "approved": "Your identity is verified.",
+    "continueToProfile": "Continue to your broker profile",
+    "failed": {
+      "rejected": "The request was declined in Nafath. You can try again.",
+      "expired": "The request expired before it was approved. Please try again."
+    },
+    "errors": {
+      "invalid_national_id": "Enter a valid 10-digit National ID or Iqama number.",
+      "already_verified": "Your identity is already verified.",
+      "rate_limited": "Too many requests. Please wait a little and try again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "BrokerProfile": {
+    "title": "Broker profile",
+    "intro": "This is what buyers see on your listings.",
+    "needsVerification": "You need to verify your identity with Nafath before creating a broker profile.",
+    "verifyNow": "Verify with Nafath",
+    "agency": "Agency: {name}",
+    "fields": {
+      "name_ar": "Name (Arabic)",
+      "name_en": "Name (English)",
+      "fal_licence": "FAL licence number",
+      "whatsapp": "WhatsApp number",
+      "photo_url": "Photo link (optional)",
+      "city_ids": "Cities you serve"
+    },
+    "errors": {
+      "name_ar": "Please enter your name in Arabic.",
+      "name_en": "Please enter your name in English.",
+      "fal_licence": "Enter a valid FAL licence number (digits only) that is not already in use.",
+      "whatsapp": "Please enter a valid mobile number.",
+      "photo_url": "Please enter a valid link, or leave it empty.",
+      "city_ids": "Please choose valid cities."
+    },
+    "save": "Save profile",
+    "saved": "Your profile has been saved.",
+    "generic": "Something went wrong. Please try again."
   }
 }

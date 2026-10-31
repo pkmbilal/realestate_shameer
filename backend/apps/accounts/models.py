@@ -60,6 +60,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     def masked_phone(self):
         return mask_phone(self.phone)
 
+    @property
+    def is_nafath_verified(self):
+        return self.nafath_verifications.filter(status=NafathVerification.Status.APPROVED).exists()
+
 
 class OtpCode(models.Model):
     """A one-time login code sent by SMS. Only a hash of the code is stored."""
@@ -82,3 +86,35 @@ class OtpCode(models.Model):
     @property
     def masked_phone(self):
         return mask_phone(self.phone)
+
+
+class NafathVerification(models.Model):
+    """One Nafath identity check. Only the status and Nafath's reference are kept,
+    never the national ID (PDPL)."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", _("Pending")
+        APPROVED = "approved", _("Approved")
+        REJECTED = "rejected", _("Rejected")
+        EXPIRED = "expired", _("Expired")
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="nafath_verifications",
+        verbose_name=_("user"),
+    )
+    transaction_ref = models.CharField(_("Nafath reference"), max_length=64, unique=True)
+    status = models.CharField(
+        _("status"), max_length=10, choices=Status.choices, default=Status.PENDING
+    )
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    verified_at = models.DateTimeField(_("verified at"), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Nafath verification")
+        verbose_name_plural = _("Nafath verifications")
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Nafath {self.get_status_display()} for {self.user}"

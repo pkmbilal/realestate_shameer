@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 
 from .forms import UserChangeForm, UserCreationForm
-from .models import OtpCode, User
+from .models import NafathVerification, OtpCode, User
 
 
 @admin.register(OtpCode)
@@ -19,6 +19,24 @@ class OtpCodeAdmin(admin.ModelAdmin):
     @admin.display(description=_("phone"))
     def masked_phone(self, obj):
         return obj.masked_phone
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(NafathVerification)
+class NafathVerificationAdmin(admin.ModelAdmin):
+    """Read-only audit of identity checks. No national ID is stored."""
+
+    list_display = ("user", "status", "created_at", "verified_at")
+    list_filter = ("status",)
+    fields = ("user", "transaction_ref", "status", "created_at", "verified_at")
+    readonly_fields = fields
+    search_fields = ("transaction_ref",)
+    ordering = ("-created_at",)
 
     def has_add_permission(self, request):
         return False

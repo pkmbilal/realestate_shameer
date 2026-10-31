@@ -112,6 +112,12 @@ OTP_MAX_ATTEMPTS = env.int("OTP_MAX_ATTEMPTS", default=5)
 OTP_RESEND_SECONDS = env.int("OTP_RESEND_SECONDS", default=60)
 OTP_MAX_PER_HOUR = env.int("OTP_MAX_PER_HOUR", default=5)
 
+# Nafath identity verification for advertisers (see integrations/nafath/).
+# Only used when INTEGRATIONS_MODE=live; the live client is not written yet.
+NAFATH_BASE_URL = env("NAFATH_BASE_URL", default="")
+NAFATH_APP_ID = env("NAFATH_APP_ID", default="")
+NAFATH_APP_KEY = env("NAFATH_APP_KEY", default="")
+
 # JWTs travel in httpOnly cookies (see apps/accounts/cookies.py).
 AUTH_COOKIE_ACCESS = "access_token"
 AUTH_COOKIE_REFRESH = "refresh_token"
@@ -176,6 +182,8 @@ REST_FRAMEWORK = {
         "otp_request": "10/hour",
         "otp_verify": "30/hour",
         "auth_session": "120/hour",
+        "nafath_start": "10/hour",
+        "nafath_status": "300/hour",
     },
 }
 

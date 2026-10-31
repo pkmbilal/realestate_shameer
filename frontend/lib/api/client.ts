@@ -22,6 +22,8 @@ export class ApiError extends Error {
     /** Stable error key from the API (e.g. "invalid_code"), used to pick a translated message. */
     public readonly code?: string,
     public readonly retryAfter?: number,
+    /** Form validation errors from DRF: field name → error messages. */
+    public readonly fieldErrors: Record<string, string[]> = {},
   ) {
     super(message);
     this.name = "ApiError";
@@ -54,15 +56,18 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as {
-      code?: string;
-      retry_after?: number;
-    };
+    const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const { code, detail, retry_after, ...rest } = body;
+    const fieldErrors = Object.fromEntries(
+      Object.entries(rest).filter(([, value]) => Array.isArray(value)),
+    ) as Record<string, string[]>;
     throw new ApiError(
       response.status,
       `${options.method ?? "GET"} ${path} failed`,
-      body.code,
-      body.retry_after,
+      // Our views send {code}; DRF permission errors send {detail} (e.g. "nafath_required").
+      typeof code === "string" ? code : typeof detail === "string" ? detail : undefined,
+      typeof retry_after === "number" ? retry_after : undefined,
+      fieldErrors,
     );
   }
   if (response.status === 204) return undefined as T;
@@ -80,7 +85,30 @@ export type Me = {
   masked_phone: string;
   role: "buyer" | "owner" | "broker" | "agency_admin" | "staff";
   date_joined: string;
+  is_nafath_verified: boolean;
 };
+
+export type NafathStatus = "pending" | "approved" | "rejected" | "expired";
+
+export type NafathStart = {
+  transaction_ref: string;
+  /** The number the user taps in the Nafath app. */
+  random_number: string;
+  status: NafathStatus;
+};
+
+export type AgencySummary = { id: number; name_ar: string; name_en: string; logo_url: string };
+
+export type BrokerProfileInput = {
+  name_ar: string;
+  name_en: string;
+  photo_url: string;
+  fal_licence: string;
+  whatsapp: string;
+  city_ids: number[];
+};
+
+export type BrokerProfile = BrokerProfileInput & { id: number; agency: AgencySummary | null };
 
 export type LatLng = { lat: number; lng: number };
 
@@ -109,6 +137,26 @@ export const api = {
   },
 
   me: () => request<Me>("/api/accounts/me/", { cache: "no-store" }),
+
+  nafath: {
+    // The national ID is sent to the API only; never store or log it in the browser.
+    start: (nationalId: string) =>
+      request<NafathStart>("/api/accounts/nafath/start/", {
+        method: "POST",
+        json: { national_id: nationalId },
+      }),
+    status: (transactionRef: string) =>
+      request<{ status: NafathStatus }>("/api/accounts/nafath/status/", {
+        method: "POST",
+        json: { transaction_ref: transactionRef },
+      }),
+  },
+
+  brokers: {
+    me: () => request<BrokerProfile>("/api/brokers/me/", { cache: "no-store" }),
+    saveMe: (profile: BrokerProfileInput) =>
+      request<BrokerProfile>("/api/brokers/me/", { method: "PUT", json: profile }),
+  },
 
   auth: {
     requestOtp: (phone: string) =>
