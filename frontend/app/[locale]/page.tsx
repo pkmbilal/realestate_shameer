@@ -1,7 +1,8 @@
 import { useTranslations } from "next-intl";
 
+import CityList from "@/components/locations/CityList";
 import SiteHeader from "@/components/SiteHeader";
-import { api } from "@/lib/api/client";
+import { api, type City } from "@/lib/api/client";
 import { portalName } from "@/lib/config";
 
 async function isApiHealthy() {
@@ -12,12 +13,20 @@ async function isApiHealthy() {
   }
 }
 
-export default async function HomePage() {
-  const healthy = await isApiHealthy();
-  return <HomeContent healthy={healthy} />;
+async function loadCities(): Promise<City[]> {
+  try {
+    return await api.locations.cities();
+  } catch {
+    return [];
+  }
 }
 
-function HomeContent({ healthy }: { healthy: boolean }) {
+export default async function HomePage() {
+  const [healthy, cities] = await Promise.all([isApiHealthy(), loadCities()]);
+  return <HomeContent healthy={healthy} cities={cities} />;
+}
+
+function HomeContent({ healthy, cities }: { healthy: boolean; cities: City[] }) {
   const t = useTranslations("Home");
 
   return (
@@ -31,6 +40,10 @@ function HomeContent({ healthy }: { healthy: boolean }) {
         <h1 className="text-3xl leading-tight font-bold sm:text-5xl">{portalName}</h1>
         <p className="text-lg text-slate-600">{t("tagline")}</p>
       </section>
+
+      <div className="pb-12">
+        <CityList cities={cities} />
+      </div>
 
       <footer className="flex items-center gap-2 text-sm text-slate-500">
         <span

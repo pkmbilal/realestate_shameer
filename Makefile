@@ -1,7 +1,7 @@
 # Shortcuts for common commands. Requires `make` (not installed by default on Windows;
 # every target below is a plain `docker compose ...` command you can run directly).
 
-.PHONY: up down logs migrate migrations superuser test lint format shell
+.PHONY: up down logs migrate migrations superuser seed test lint format shell
 
 up:
 	docker compose up -d --build
@@ -20,6 +20,9 @@ migrations:
 
 superuser:
 	docker compose exec api python manage.py createsuperuser
+
+seed:
+	docker compose exec api python manage.py seed_demo
 
 test:
 	docker compose exec api pytest

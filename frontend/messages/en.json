@@ -7,7 +7,8 @@
     "comingSoon": "Coming soon",
     "apiStatus": "API status",
     "statusOk": "Connected",
-    "statusDown": "Unavailable"
+    "statusDown": "Unavailable",
+    "browseByCity": "Browse by city"
   },
   "LocaleSwitcher": {
     "label": "العربية"

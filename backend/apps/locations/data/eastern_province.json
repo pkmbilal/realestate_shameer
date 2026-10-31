@@ -1,0 +1,100 @@
+{
+  "_note": "Launch cities and districts. Edit names here and run `python manage.py seed_locations` again: rows are matched by English slug, so fixing a name updates it in place. Slugs are made from the names automatically unless given. Centre points are [longitude, latitude]. DISTRICT LIST IS A STARTING POINT FOR THE OWNER TO REVIEW.",
+  "cities": [
+    {
+      "name_en": "Dammam",
+      "name_ar": "الدمام",
+      "region": "eastern",
+      "center": [50.0888, 26.4207],
+      "sort_order": 1,
+      "districts": [
+        { "name_en": "Al Shulah", "name_ar": "الشعلة" },
+        { "name_en": "Al Faisaliyah", "name_ar": "الفيصلية" },
+        { "name_en": "Al Mazruiyah", "name_ar": "المزروعية" },
+        { "name_en": "Al Shati Al Gharbi", "name_ar": "الشاطئ الغربي" },
+        { "name_en": "Al Shati Al Sharqi", "name_ar": "الشاطئ الشرقي" },
+        { "name_en": "Al Muraikabat", "name_ar": "المريكبات" },
+        { "name_en": "Al Nakheel", "name_ar": "النخيل" },
+        { "name_en": "Al Jalawiyah", "name_ar": "الجلوية" },
+        { "name_en": "Al Adamah", "name_ar": "العدامة" },
+        { "name_en": "Al Badiyah", "name_ar": "البادية" },
+        { "name_en": "Ibn Khaldun", "name_ar": "ابن خلدون" },
+        { "name_en": "Al Hamra", "name_ar": "الحمراء" },
+        { "name_en": "Al Anud", "name_ar": "العنود" },
+        { "name_en": "Uhud", "name_ar": "أحد" },
+        { "name_en": "Al Nur", "name_ar": "النور" },
+        { "name_en": "Al Rawdah", "name_ar": "الروضة" },
+        { "name_en": "Al Manar", "name_ar": "المنار" },
+        { "name_en": "Al Nada", "name_ar": "الندى" },
+        { "name_en": "Taibah", "name_ar": "طيبة" },
+        { "name_en": "Al Qadisiyah", "name_ar": "القادسية" },
+        { "name_en": "Al Itisalat", "name_ar": "الاتصالات" },
+        { "name_en": "Al Jamiyin", "name_ar": "الجامعيين" },
+        { "name_en": "Al Mohammadiyah", "name_ar": "المحمدية" },
+        { "name_en": "Al Zuhur", "name_ar": "الزهور" },
+        { "name_en": "Al Firdaws", "name_ar": "الفردوس" },
+        { "name_en": "Al Rayyan", "name_ar": "الريان" },
+        { "name_en": "Al Khalij", "name_ar": "الخليج" }
+      ]
+    },
+    {
+      "name_en": "Khobar",
+      "name_ar": "الخبر",
+      "region": "eastern",
+      "center": [50.2083, 26.2794],
+      "sort_order": 2,
+      "districts": [
+        { "name_en": "Al Rakah Al Shamaliyah", "name_ar": "الراكة الشمالية" },
+        { "name_en": "Al Rakah Al Janubiyah", "name_ar": "الراكة الجنوبية" },
+        { "name_en": "Al Aqrabiyah", "name_ar": "العقربية" },
+        { "name_en": "Al Khobar Al Shamaliyah", "name_ar": "الخبر الشمالية" },
+        { "name_en": "Al Khobar Al Janubiyah", "name_ar": "الخبر الجنوبية" },
+        { "name_en": "Al Thuqbah", "name_ar": "الثقبة" },
+        { "name_en": "Al Olaya", "name_ar": "العليا" },
+        { "name_en": "Al Yarmouk", "name_ar": "اليرموك" },
+        { "name_en": "Al Hizam Al Akhdar", "name_ar": "الحزام الأخضر" },
+        { "name_en": "Al Hizam Al Dhahabi", "name_ar": "الحزام الذهبي" },
+        { "name_en": "Al Aziziyah", "name_ar": "العزيزية" },
+        { "name_en": "Al Hamra", "name_ar": "الحمراء" },
+        { "name_en": "Al Bandariyah", "name_ar": "البندرية" },
+        { "name_en": "Al Jisr", "name_ar": "الجسر" },
+        { "name_en": "Madinat Al Ummal", "name_ar": "مدينة العمال" },
+        { "name_en": "Al Corniche", "name_ar": "الكورنيش" },
+        { "name_en": "Al Andalus", "name_ar": "الأندلس" },
+        { "name_en": "Al Rawabi", "name_ar": "الروابي" },
+        { "name_en": "Al Khuzama", "name_ar": "الخزامى" },
+        { "name_en": "Al Tahliyah", "name_ar": "التحلية" },
+        { "name_en": "Qurtubah", "name_ar": "قرطبة" }
+      ]
+    },
+    {
+      "name_en": "Dhahran",
+      "name_ar": "الظهران",
+      "region": "eastern",
+      "center": [50.114, 26.2886],
+      "sort_order": 3,
+      "districts": [
+        { "name_en": "Al Doha Al Shamaliyah", "name_ar": "الدوحة الشمالية" },
+        { "name_en": "Al Doha Al Janubiyah", "name_ar": "الدوحة الجنوبية" },
+        { "name_en": "Al Qusur", "name_ar": "القصور" },
+        { "name_en": "Gharb Al Dhahran", "name_ar": "غرب الظهران" },
+        { "name_en": "Al Jamiah", "name_ar": "الجامعة" },
+        { "name_en": "Al Dana", "name_ar": "الدانة" }
+      ]
+    },
+    {
+      "name_en": "Jubail",
+      "name_ar": "الجبيل",
+      "region": "eastern",
+      "center": [49.646, 27.0046],
+      "sort_order": 4,
+      "districts": [
+        { "name_en": "Al Jubail Al Balad", "name_ar": "الجبيل البلد" },
+        { "name_en": "Al Deffi", "name_ar": "الدفي" },
+        { "name_en": "Al Fanateer", "name_ar": "الفناتير" },
+        { "name_en": "Al Huwailat", "name_ar": "الحويلات" },
+        { "name_en": "Jalmudah", "name_ar": "جلمودة" }
+      ]
+    }
+  ]
+}

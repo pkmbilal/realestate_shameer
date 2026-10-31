@@ -82,8 +82,31 @@ export type Me = {
   date_joined: string;
 };
 
+export type LatLng = { lat: number; lng: number };
+
+export type City = {
+  id: number;
+  name_ar: string;
+  name_en: string;
+  slug_ar: string;
+  slug_en: string;
+  region: string;
+  center: LatLng | null;
+};
+
+export type District = Omit<City, "region">;
+
 export const api = {
   health: () => request<HealthResponse>("/api/health/", { cache: "no-store" }),
+
+  locations: {
+    // Cities and districts change rarely; Next.js may reuse the answer for 10 minutes.
+    cities: () => request<City[]>("/api/locations/cities/", { next: { revalidate: 600 } }),
+    districts: (citySlug: string) =>
+      request<District[]>(`/api/locations/cities/${encodeURIComponent(citySlug)}/districts/`, {
+        next: { revalidate: 600 },
+      }),
+  },
 
   me: () => request<Me>("/api/accounts/me/", { cache: "no-store" }),
 
