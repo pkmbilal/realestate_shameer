@@ -1,0 +1,15 @@
+{
+  "Metadata": {
+    "description": "عقارات مرخصة للبيع والإيجار في المملكة العربية السعودية."
+  },
+  "Home": {
+    "tagline": "ابحث عن شقق وفلل وأراضٍ للبيع والإيجار في المنطقة الشرقية.",
+    "comingSoon": "قريبًا",
+    "apiStatus": "حالة الخادم",
+    "statusOk": "متصل",
+    "statusDown": "غير متاح"
+  },
+  "LocaleSwitcher": {
+    "label": "English"
+  }
+}

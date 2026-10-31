@@ -1,0 +1,15 @@
+{
+  "Metadata": {
+    "description": "Licensed property listings for sale and rent in Saudi Arabia."
+  },
+  "Home": {
+    "tagline": "Find apartments, villas and land for sale and rent in the Eastern Province.",
+    "comingSoon": "Coming soon",
+    "apiStatus": "API status",
+    "statusOk": "Connected",
+    "statusDown": "Unavailable"
+  },
+  "LocaleSwitcher": {
+    "label": "العربية"
+  }
+}
