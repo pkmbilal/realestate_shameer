@@ -15,7 +15,7 @@ export default function LocaleSwitcher() {
     <Link
       href={pathname}
       locale={otherLocale}
-      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50"
+      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium whitespace-nowrap hover:bg-slate-50"
     >
       {t("label")}
     </Link>

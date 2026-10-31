@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.gis",
     # Third party
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "storages",
     # Our apps (one per domain, see CLAUDE.md §4)
@@ -105,6 +106,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Phone OTP login (see apps/accounts/services.py).
+OTP_TTL_SECONDS = env.int("OTP_TTL_SECONDS", default=300)
+OTP_MAX_ATTEMPTS = env.int("OTP_MAX_ATTEMPTS", default=5)
+OTP_RESEND_SECONDS = env.int("OTP_RESEND_SECONDS", default=60)
+OTP_MAX_PER_HOUR = env.int("OTP_MAX_PER_HOUR", default=5)
+
+# JWTs travel in httpOnly cookies (see apps/accounts/cookies.py).
+AUTH_COOKIE_ACCESS = "access_token"
+AUTH_COOKIE_REFRESH = "refresh_token"
+AUTH_COOKIE_SECURE = env.bool("AUTH_COOKIE_SECURE", default=False)
+AUTH_COOKIE_DOMAIN = env("AUTH_COOKIE_DOMAIN", default="") or None
+
 # --- Language & time -----------------------------------------------------------
 
 LANGUAGE_CODE = "ar"
@@ -154,10 +167,16 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@localhost")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.accounts.authentication.CookieJWTAuthentication",
     ],
     # Deny by default: every endpoint must opt in to public access explicitly.
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # Per-IP limits for views that set a throttle_scope (per-phone limits are in services).
+    "DEFAULT_THROTTLE_RATES": {
+        "otp_request": "10/hour",
+        "otp_verify": "30/hour",
+        "auth_session": "120/hour",
+    },
 }
 
 SIMPLE_JWT = {

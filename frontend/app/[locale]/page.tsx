@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 
-import LocaleSwitcher from "@/components/LocaleSwitcher";
+import SiteHeader from "@/components/SiteHeader";
 import { api } from "@/lib/api/client";
 import { portalName } from "@/lib/config";
 
@@ -22,10 +22,7 @@ function HomeContent({ healthy }: { healthy: boolean }) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 py-6 sm:px-6">
-      <header className="flex items-center justify-between">
-        <span className="text-lg font-bold">{portalName}</span>
-        <LocaleSwitcher />
-      </header>
+      <SiteHeader />
 
       <section className="flex flex-1 flex-col justify-center gap-4 py-16">
         <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">

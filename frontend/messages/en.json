@@ -11,5 +11,31 @@
   },
   "LocaleSwitcher": {
     "label": "العربية"
+  },
+  "Auth": {
+    "login": "Log in",
+    "logout": "Log out"
+  },
+  "Login": {
+    "title": "Log in",
+    "intro": "Enter your mobile number and we will send you a login code by SMS.",
+    "phoneLabel": "Mobile number",
+    "phonePlaceholder": "05XXXXXXXX",
+    "phoneHint": "Saudi mobile number, e.g. 0512345678",
+    "sendCode": "Send code",
+    "codeLabel": "Login code",
+    "codeSentTo": "We sent a 6-digit code to",
+    "verify": "Log in",
+    "changePhone": "Change number",
+    "resend": "Resend code",
+    "resendIn": "Resend in {seconds}s",
+    "errors": {
+      "invalid_phone": "Please enter a valid mobile number.",
+      "invalid_code": "The code is wrong or has expired.",
+      "too_many_attempts": "Too many wrong tries. Please request a new code.",
+      "rate_limited": "Too many requests. Please wait a little and try again.",
+      "account_disabled": "This account has been disabled. Please contact support.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

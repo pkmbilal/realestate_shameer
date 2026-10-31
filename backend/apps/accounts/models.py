@@ -59,3 +59,26 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def masked_phone(self):
         return mask_phone(self.phone)
+
+
+class OtpCode(models.Model):
+    """A one-time login code sent by SMS. Only a hash of the code is stored."""
+
+    phone = models.CharField(_("phone"), max_length=16, db_index=True)
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    expires_at = models.DateTimeField(_("expires at"))
+    attempts = models.PositiveSmallIntegerField(_("attempts"), default=0)
+    used_at = models.DateTimeField(_("used at"), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("OTP code")
+        verbose_name_plural = _("OTP codes")
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"OTP for {mask_phone(self.phone)}"
+
+    @property
+    def masked_phone(self):
+        return mask_phone(self.phone)
