@@ -11,8 +11,9 @@ from datetime import timedelta
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
+from django.contrib.gis.geos import Polygon
 from django.db import IntegrityError, transaction
-from django.db.models import F, Max, Q
+from django.db.models import BooleanField, Case, F, Max, Q, QuerySet, Value, When
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -22,7 +23,7 @@ from apps.core.storage import bucket_name, s3_client
 from apps.locations.models import City, District
 from integrations.rega import RegaAdLicence, RegaError, get_rega_client
 
-from .models import Listing, ListingPhoto, ListingStatusChange
+from .models import Favourite, Listing, ListingPhoto, ListingStatusChange
 
 logger = logging.getLogger(__name__)
 Status = Listing.Status
@@ -472,3 +473,97 @@ def delete_photo(listing: Listing, by: User, photo_id: int) -> None:
 
 def record_view(listing: Listing) -> None:
     Listing.objects.filter(pk=listing.pk).update(view_count=F("view_count") + 1)
+
+
+def public_listings() -> QuerySet[Listing]:
+    """Active listings with what cards and listing pages need loaded in one go."""
+    return (
+        Listing.objects.filter(status=Listing.Status.ACTIVE)
+        .select_related("city", "district", "broker", "agency")
+        .prefetch_related("photos")
+    )
+
+
+SORTS = {
+    "newest": ("-refreshed_at", "-id"),
+    "price_asc": (F("price_halalas").asc(nulls_last=True), "-id"),
+    "price_desc": (F("price_halalas").desc(nulls_last=True), "-id"),
+}
+
+
+def search_listings(params: dict) -> QuerySet[Listing]:
+    """Filter and sort active listings. `params` is SearchParamsSerializer.validated_data.
+
+    Featured listings (featured_until in the future) always come first, whatever the sort.
+    Prices in params are already in halalas.
+    """
+    qs = public_listings()
+    exact = {
+        "purpose": "purpose",
+        "city": "city__slug_en",
+        "district": "district__slug_en",
+        "completion": "completion",
+        "furnishing": "furnishing",
+        "rent_period": "rent_period",
+    }
+    for param, lookup in exact.items():
+        if params.get(param):
+            qs = qs.filter(**{lookup: params[param]})
+    if params.get("type"):
+        qs = qs.filter(property_type__in=params["type"])
+
+    ranges = {
+        "price_min": "price_halalas__gte",
+        "price_max": "price_halalas__lte",
+        "beds_min": "bedrooms__gte",
+        "baths_min": "bathrooms__gte",
+        "area_min": "area_m2__gte",
+        "area_max": "area_m2__lte",
+    }
+    for param, lookup in ranges.items():
+        if params.get(param) is not None:
+            qs = qs.filter(**{lookup: params[param]})
+
+    if params.get("bbox"):
+        qs = qs.filter(location__within=Polygon.from_bbox(params["bbox"]))
+
+    featured = Case(
+        When(featured_until__gt=timezone.now(), then=Value(True)),
+        default=Value(False),
+        output_field=BooleanField(),
+    )
+    order = SORTS[params.get("sort") or "newest"]
+    return qs.annotate(featured_now=featured).order_by("-featured_now", *order)
+
+
+# --- Favourites -----------------------------------------------------------------------
+
+
+def add_favourite(user: User, listing: Listing) -> Favourite:
+    """Save a listing for this user. Saving it twice is fine (returns the existing row)."""
+    if listing.status != Listing.Status.ACTIVE:
+        raise ListingError("not_active")
+    favourite, _ = Favourite.objects.get_or_create(user=user, listing=listing)
+    return favourite
+
+
+def remove_favourite(user: User, listing: Listing) -> None:
+    Favourite.objects.filter(user=user, listing=listing).delete()
+
+
+def favourite_listings(user: User) -> QuerySet[Listing]:
+    """The user's saved listings that are still active, most recently saved first."""
+    return (
+        public_listings()
+        .filter(favourites__user=user)
+        .annotate(saved_at=Max("favourites__created_at", filter=Q(favourites__user=user)))
+        .order_by("-saved_at", "-id")
+    )
+
+
+def favourite_references(user: User) -> list[str]:
+    return list(
+        Favourite.objects.filter(user=user, listing__status=Listing.Status.ACTIVE).values_list(
+            "listing__reference", flat=True
+        )
+    )

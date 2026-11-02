@@ -1,10 +1,9 @@
-from django.db.models import BooleanField, Case, Q, Value, When
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -15,12 +14,14 @@ from .models import Amenity, Listing
 from .serializers import (
     AmenitySerializer,
     ConfirmPhotoSerializer,
+    MapPinSerializer,
     MyListingSerializer,
     PhotoSerializer,
     PresignPhotoSerializer,
     PublicListingCardSerializer,
     PublicListingSerializer,
     ReorderPhotosSerializer,
+    SearchParamsSerializer,
     StartListingSerializer,
 )
 
@@ -163,22 +164,22 @@ class PhotoDetailView(AdvertiserView):
 # --- Public ----------------------------------------------------------------------
 
 
-def _public_listings():
-    return (
-        Listing.objects.filter(status=Listing.Status.ACTIVE)
-        .select_related("city", "district", "broker", "agency")
-        .prefetch_related("photos")
-    )
-
-
 class ListingPagination(PageNumberPagination):
     page_size = 20
 
 
-class PublicListingsView(ListAPIView):
-    """Active listings, featured first then newest. Full search comes with the search feature.
+def _search_params(request) -> dict:
+    serializer = SearchParamsSerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+    return serializer.validated_data
 
-    Filters: ?city=<slug_en>&district=<slug_en>&purpose=sale|rent&type=<property_type>
+
+class PublicListingsView(ListAPIView):
+    """Search active listings. Featured listings come first, then the chosen sort.
+
+    Query params are documented on SearchParamsSerializer (purpose, type, city, district,
+    price_min/max in SAR, beds_min, baths_min, area_min/max, completion, furnishing,
+    rent_period, sort, bbox, page).
     """
 
     permission_classes = [AllowAny]
@@ -187,22 +188,40 @@ class PublicListingsView(ListAPIView):
     pagination_class = ListingPagination
 
     def get_queryset(self):
-        params = self.request.query_params
-        qs = _public_listings()
-        if params.get("city"):
-            qs = qs.filter(city__slug_en=params["city"])
-        if params.get("district"):
-            qs = qs.filter(district__slug_en=params["district"])
-        if params.get("purpose"):
-            qs = qs.filter(purpose=params["purpose"])
-        if params.get("type"):
-            qs = qs.filter(property_type=params["type"])
-        featured = Case(
-            When(featured_until__gt=timezone.now(), then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
+        return services.search_listings(_search_params(self.request))
+
+
+class ListingMapView(APIView):
+    """Light map pins for the visible map area. Same filters as search; `bbox` is required."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    MAX_PINS = 500
+
+    def get(self, request):
+        params = _search_params(request)
+        if not params.get("bbox"):
+            return Response({"bbox": ["This field is required."]}, status=400)
+        qs = (
+            services.search_listings(params)
+            .select_related(None)
+            .prefetch_related(None)
+            .only(
+                "reference",
+                "location",
+                "price_halalas",
+                "purpose",
+                "rent_period",
+                "featured_until",
+            )
         )
-        return qs.annotate(featured_now=featured).order_by("-featured_now", "-refreshed_at", "-id")
+        pins = list(qs[: self.MAX_PINS + 1])
+        return Response(
+            {
+                "results": MapPinSerializer(pins[: self.MAX_PINS], many=True).data,
+                "truncated": len(pins) > self.MAX_PINS,
+            }
+        )
 
 
 class PublicListingDetailView(RetrieveAPIView):
@@ -214,7 +233,7 @@ class PublicListingDetailView(RetrieveAPIView):
     lookup_field = "reference"
 
     def get_queryset(self):
-        return _public_listings().prefetch_related("amenities")
+        return services.public_listings().prefetch_related("amenities")
 
     def retrieve(self, request, *args, **kwargs):
         listing = self.get_object()
@@ -229,3 +248,45 @@ class AmenitiesView(ListAPIView):
     serializer_class = AmenitySerializer
     queryset = Amenity.objects.all()
     pagination_class = None
+
+
+# --- Favourites (signed-in users) ------------------------------------------------------
+
+
+class FavouritesView(ListAPIView):
+    """The signed-in user's saved listings that are still active."""
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = PublicListingCardSerializer
+    pagination_class = ListingPagination
+
+    def get_queryset(self):
+        return services.favourite_listings(self.request.user)
+
+
+class FavouriteIdsView(APIView):
+    """References of the user's saved listings, so cards can show a filled heart."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"references": services.favourite_references(request.user)})
+
+
+class FavouriteView(APIView):
+    """PUT saves the listing, DELETE un-saves it. Both are safe to repeat."""
+
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, reference):
+        listing = get_object_or_404(services.public_listings(), reference=reference)
+        try:
+            services.add_favourite(request.user, listing)
+        except services.ListingError as exc:
+            return _error(exc)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, reference):
+        listing = get_object_or_404(Listing, reference=reference)
+        services.remove_favourite(request.user, listing)
+        return Response(status=status.HTTP_204_NO_CONTENT)
