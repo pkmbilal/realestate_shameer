@@ -9,6 +9,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -118,6 +119,14 @@ NAFATH_BASE_URL = env("NAFATH_BASE_URL", default="")
 NAFATH_APP_ID = env("NAFATH_APP_ID", default="")
 NAFATH_APP_KEY = env("NAFATH_APP_KEY", default="")
 
+# Listings (see apps/listings/services.py).
+LISTING_POST_DAYS = env.int("LISTING_POST_DAYS", default=30)
+LISTING_PHOTO_MAX_MB = env.int("LISTING_PHOTO_MAX_MB", default=10)
+LISTING_PHOTO_MAX_COUNT = env.int("LISTING_PHOTO_MAX_COUNT", default=30)
+# REGA platform API. Only used when INTEGRATIONS_MODE=live; the live client is not written yet.
+REGA_BASE_URL = env("REGA_BASE_URL", default="")
+REGA_API_KEY = env("REGA_API_KEY", default="")
+
 # JWTs travel in httpOnly cookies (see apps/accounts/cookies.py).
 AUTH_COOKIE_ACCESS = "access_token"
 AUTH_COOKIE_REFRESH = "refresh_token"
@@ -160,6 +169,10 @@ STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
+# Browsers upload listing photos straight to storage with presigned URLs, so those URLs
+# must use an address the browser can reach (the API container uses S3_ENDPOINT_URL).
+S3_PUBLIC_ENDPOINT_URL = env("S3_PUBLIC_ENDPOINT_URL", default=env("S3_ENDPOINT_URL"))
+
 IMGPROXY_URL = env("IMGPROXY_URL")
 IMGPROXY_KEY = env("IMGPROXY_KEY")
 IMGPROXY_SALT = env("IMGPROXY_SALT")
@@ -201,7 +214,13 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_TIMEZONE = "UTC"
 CELERY_TASK_ACKS_LATE = True
 # Scheduled jobs (nightly licence expiry etc.) are added here as features land.
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    # 23:00 UTC = 02:00 Riyadh: hide listings whose REGA licence or post period has ended.
+    "expire-listings-nightly": {
+        "task": "apps.listings.tasks.expire_listings",
+        "schedule": crontab(hour=23, minute=0),
+    },
+}
 
 # --- Logging -------------------------------------------------------------------
 # Never log national IDs, phone numbers or OTP codes in plain text (PDPL).

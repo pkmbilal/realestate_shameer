@@ -1,0 +1,20 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <p>{% translate "These listings will be changed. The reason is logged and shown to the advertiser." %}</p>
+  <ul>
+    {% for listing in listings %}
+      <li>{{ listing.reference }} — {{ listing.title_en|default:listing.title_ar }} ({{ listing.get_status_display }})</li>
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ listing.pk }}">
+    {% endfor %}
+  </ul>
+  {{ form.as_p }}
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="apply" value="1">
+  <input type="submit" value="{{ title }}" class="default">
+  <a href="" class="button cancel-link">{% translate "Cancel" %}</a>
+</form>
+{% endblock %}
