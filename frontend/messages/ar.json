@@ -8,7 +8,8 @@
     "apiStatus": "حالة الخادم",
     "statusOk": "متصل",
     "statusDown": "غير متاح",
-    "browseByCity": "تصفح حسب المدينة"
+    "browseByCity": "تصفح حسب المدينة",
+    "browseAll": "تصفّح كل العقارات"
   },
   "LocaleSwitcher": {
     "label": "English"
@@ -86,5 +87,148 @@
     "save": "حفظ الملف",
     "saved": "تم حفظ ملفك.",
     "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  },
+  "Nav": {
+    "search": "بحث",
+    "buy": "شراء",
+    "rent": "إيجار",
+    "favourites": "المحفوظة"
+  },
+  "Property": {
+    "purpose": {
+      "sale": "للبيع",
+      "rent": "للإيجار"
+    },
+    "purposeTitle": {
+      "sale": "للبيع",
+      "rent": "للإيجار"
+    },
+    "type": {
+      "apartment": "شقة",
+      "villa": "فيلا",
+      "floor": "دور",
+      "duplex": "دوبلكس",
+      "townhouse": "تاون هاوس",
+      "land": "أرض",
+      "building": "عمارة"
+    },
+    "typePlural": {
+      "apartment": "شقق",
+      "villa": "فلل",
+      "floor": "أدوار",
+      "duplex": "دوبلكسات",
+      "townhouse": "تاون هاوس",
+      "land": "أراضٍ",
+      "building": "عمائر"
+    },
+    "rentPeriod": {
+      "yearly": "/ سنوياً",
+      "monthly": "/ شهرياً"
+    },
+    "rentPeriodName": {
+      "yearly": "سنوي",
+      "monthly": "شهري"
+    },
+    "furnishing": {
+      "unfurnished": "غير مفروش",
+      "semi_furnished": "مفروش جزئياً",
+      "furnished": "مفروش"
+    },
+    "completion": {
+      "ready": "جاهز",
+      "off_plan": "على الخارطة"
+    },
+    "beds": "{count, plural, =0 {استوديو} one {غرفة واحدة} two {غرفتان} few {# غرف} many {# غرفة} other {# غرفة}}",
+    "baths": "{count, plural, one {دورة مياه واحدة} two {دورتا مياه} few {# دورات مياه} many {# دورة مياه} other {# دورة مياه}}",
+    "area": "{area} م²",
+    "priceOnRequest": "السعر عند الطلب",
+    "featured": "مميز",
+    "defaultTitle": "{type} {purpose} في {place}"
+  },
+  "Search": {
+    "metaTitle": "{what} {purpose} في {place}",
+    "metaTitleAll": "عقارات للبيع والإيجار في {place}",
+    "everywhere": "المنطقة الشرقية",
+    "properties": "عقارات",
+    "titleAll": "عقارات للبيع والإيجار",
+    "results": "{count, plural, =0 {لا توجد عقارات} one {عقار واحد} two {عقاران} few {# عقارات} many {# عقاراً} other {# عقار}}",
+    "noResults": "لا توجد إعلانات تطابق بحثك. جرّب إزالة بعض الفلاتر.",
+    "loadError": "تعذّر تحميل الإعلانات. حاول مرة أخرى.",
+    "filters": "الفلاتر",
+    "anyPurpose": "شراء أو إيجار",
+    "city": "المدينة",
+    "anyCity": "كل المدن",
+    "district": "الحي",
+    "anyDistrict": "كل الأحياء",
+    "propertyType": "نوع العقار",
+    "anyType": "أي نوع",
+    "price": "السعر (ريال)",
+    "min": "من",
+    "max": "إلى",
+    "beds": "غرف النوم",
+    "baths": "دورات المياه",
+    "any": "الكل",
+    "plus": "+{count}",
+    "area": "المساحة (م²)",
+    "completion": "جاهز / على الخارطة",
+    "furnishing": "التأثيث",
+    "rentPeriod": "مدة الإيجار",
+    "apply": "عرض النتائج",
+    "reset": "مسح الفلاتر",
+    "sort": "الترتيب",
+    "sortOptions": {
+      "newest": "الأحدث",
+      "price_asc": "الأقل سعراً",
+      "price_desc": "الأعلى سعراً"
+    },
+    "viewList": "القائمة",
+    "viewMap": "الخريطة",
+    "previous": "السابق",
+    "next": "التالي",
+    "pageOf": "صفحة {page} من {pages}",
+    "mapTruncated": "نعرض أول {count} إعلان هنا. قرّب الخريطة لرؤية المزيد.",
+    "mapLoading": "جارٍ تحميل الخريطة…",
+    "mapError": "تعذّر تحميل الخريطة."
+  },
+  "Listing": {
+    "reference": "رقم الإعلان {reference}",
+    "description": "الوصف",
+    "amenities": "المزايا",
+    "location": "الموقع",
+    "advertiser": "المعلن",
+    "advertiserType": {
+      "broker": "وسيط عقاري مرخّص",
+      "agency": "مكتب عقاري",
+      "owner": "المالك"
+    },
+    "falLicence": "رخصة فال",
+    "regaBadge": "إعلان مرخّص من الهيئة العامة للعقار",
+    "regaLicence": "رقم ترخيص الإعلان",
+    "regaExpires": "ساري حتى {date}",
+    "noPhotos": "لا توجد صور بعد",
+    "photoAlt": "صورة {n} من {total}",
+    "facts": {
+      "type": "النوع",
+      "purpose": "الغرض",
+      "area": "المساحة",
+      "beds": "غرف النوم",
+      "baths": "دورات المياه",
+      "furnishing": "التأثيث",
+      "completion": "حالة البناء",
+      "rentPeriod": "مدة الإيجار"
+    },
+    "contactSoon": "أزرار التواصل (واتساب، اتصال، استفسار) قريباً.",
+    "views": "{count, plural, one {مشاهدة واحدة} two {مشاهدتان} few {# مشاهدات} many {# مشاهدة} other {# مشاهدة}}",
+    "backToSearch": "العودة إلى البحث"
+  },
+  "Favourites": {
+    "title": "العقارات المحفوظة",
+    "save": "حفظ",
+    "saved": "محفوظ",
+    "empty": "لم تحفظ أي عقار بعد.",
+    "browse": "تصفّح العقارات",
+    "loginNeeded": "سجّل الدخول لرؤية العقارات المحفوظة.",
+    "login": "تسجيل الدخول",
+    "error": "تعذّر تحديث المحفوظات. حاول مرة أخرى."
   }
 }

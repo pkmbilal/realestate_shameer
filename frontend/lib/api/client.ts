@@ -124,6 +124,131 @@ export type City = {
 
 export type District = Omit<City, "region">;
 
+// --- Listings and search ------------------------------------------------------------
+
+export type Purpose = "sale" | "rent";
+export type RentPeriod = "yearly" | "monthly";
+export type PropertyType =
+  | "apartment"
+  | "villa"
+  | "floor"
+  | "duplex"
+  | "townhouse"
+  | "land"
+  | "building";
+export type Furnishing = "unfurnished" | "semi_furnished" | "furnished";
+export type Completion = "ready" | "off_plan";
+export type SortKey = "newest" | "price_asc" | "price_desc";
+
+export const PROPERTY_TYPES: readonly PropertyType[] = [
+  "apartment",
+  "villa",
+  "floor",
+  "duplex",
+  "townhouse",
+  "land",
+  "building",
+];
+
+/** Query for /api/listings/. Prices are whole SAR; the API converts them to halalas. */
+export type SearchParams = {
+  purpose?: Purpose;
+  type?: PropertyType[];
+  city?: string;
+  district?: string;
+  price_min?: number;
+  price_max?: number;
+  beds_min?: number;
+  baths_min?: number;
+  area_min?: number;
+  area_max?: number;
+  completion?: Completion;
+  furnishing?: Furnishing;
+  rent_period?: RentPeriod;
+  sort?: SortKey;
+  /** minLng,minLat,maxLng,maxLat */
+  bbox?: string;
+  page?: number;
+};
+
+export type PlaceRef = { id: number; name_ar: string; name_en: string; slug_en: string };
+
+export type Photo = { id: number; position: number; card_url: string; large_url: string };
+
+export type Amenity = { id: number; slug: string; name_ar: string; name_en: string };
+
+export type ListingCard = {
+  reference: string;
+  purpose: Purpose;
+  property_type: PropertyType;
+  price_halalas: number | null;
+  rent_period: RentPeriod | "";
+  bedrooms: number | null;
+  bathrooms: number | null;
+  area_m2: number;
+  title_ar: string;
+  title_en: string;
+  city: PlaceRef;
+  district: PlaceRef | null;
+  latitude: number;
+  longitude: number;
+  cover: Photo | null;
+  is_featured: boolean;
+  published_at: string | null;
+};
+
+export type Advertiser = {
+  type: "broker" | "agency" | "owner";
+  broker: {
+    id: number;
+    name_ar: string;
+    name_en: string;
+    photo_url: string;
+    fal_licence: string;
+  } | null;
+  agency: AgencySummary | null;
+};
+
+export type ListingDetail = ListingCard & {
+  furnishing: Furnishing | "";
+  completion: Completion;
+  description_ar: string;
+  description_en: string;
+  licence_number: string;
+  licence_expires_on: string;
+  photos: Photo[];
+  amenities: Amenity[];
+  advertiser: Advertiser;
+  view_count: number;
+};
+
+export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
+
+export type MapPin = {
+  reference: string;
+  latitude: number;
+  longitude: number;
+  price_halalas: number | null;
+  purpose: Purpose;
+  rent_period: RentPeriod | "";
+  is_featured: boolean;
+};
+
+/** Builds "?a=1&type=villa,land" from a params object, skipping empty values. */
+export function toQuery(params: Record<string, unknown>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    if (Array.isArray(value)) {
+      if (value.length) query.set(key, value.join(","));
+    } else {
+      query.set(key, String(value));
+    }
+  }
+  const text = query.toString();
+  return text ? `?${text}` : "";
+}
+
 export const api = {
   health: () => request<HealthResponse>("/api/health/", { cache: "no-store" }),
 
@@ -137,6 +262,35 @@ export const api = {
   },
 
   me: () => request<Me>("/api/accounts/me/", { cache: "no-store" }),
+
+  listings: {
+    search: (params: SearchParams) =>
+      request<Page<ListingCard>>(`/api/listings/${toQuery(params)}`, { cache: "no-store" }),
+    map: (params: SearchParams & { bbox: string }) =>
+      request<{ results: MapPin[]; truncated: boolean }>(`/api/listings/map/${toQuery(params)}`),
+    /** Each call counts as a page view, so call it once per page render. */
+    detail: (reference: string) =>
+      request<ListingDetail>(`/api/listings/${encodeURIComponent(reference)}/`, {
+        cache: "no-store",
+      }),
+  },
+
+  favourites: {
+    list: (page = 1) =>
+      request<Page<ListingCard>>(`/api/listings/favourites/${toQuery({ page })}`, {
+        cache: "no-store",
+      }),
+    references: () =>
+      request<{ references: string[] }>("/api/listings/favourites/ids/", { cache: "no-store" }),
+    add: (reference: string) =>
+      request<void>(`/api/listings/${encodeURIComponent(reference)}/favourite/`, {
+        method: "PUT",
+      }),
+    remove: (reference: string) =>
+      request<void>(`/api/listings/${encodeURIComponent(reference)}/favourite/`, {
+        method: "DELETE",
+      }),
+  },
 
   nafath: {
     // The national ID is sent to the API only; never store or log it in the browser.

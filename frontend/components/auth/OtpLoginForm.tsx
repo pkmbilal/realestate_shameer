@@ -22,8 +22,13 @@ function errorKey(error: unknown): ErrorKey {
   return KNOWN_ERRORS.find((known) => known === code) ?? "generic";
 }
 
-/** Two steps: enter phone → enter the 6-digit SMS code. */
-export default function OtpLoginForm() {
+/** Only same-site paths like "/search?x=1" are allowed as the after-login page. */
+function safeNext(next: string | undefined): string {
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+}
+
+/** Two steps: enter phone → enter the 6-digit SMS code. `next` is where to go afterwards. */
+export default function OtpLoginForm({ next }: { next?: string }) {
   const t = useTranslations("Login");
   const router = useRouter();
   const [step, setStep] = useState<"phone" | "code">("phone");
@@ -59,7 +64,7 @@ export default function OtpLoginForm() {
     setError(null);
     try {
       await api.auth.verifyOtp(phone, code);
-      router.replace("/");
+      router.replace(safeNext(next));
       router.refresh();
     } catch (err) {
       setError(errorKey(err));
