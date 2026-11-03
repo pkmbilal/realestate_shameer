@@ -127,6 +127,15 @@ LISTING_PHOTO_MAX_COUNT = env.int("LISTING_PHOTO_MAX_COUNT", default=30)
 REGA_BASE_URL = env("REGA_BASE_URL", default="")
 REGA_API_KEY = env("REGA_API_KEY", default="")
 
+# Leads (see apps/leads/services.py). SITE_URL is the public website, used in WhatsApp messages.
+SITE_URL = env("SITE_URL", default="http://localhost:3000").rstrip("/")
+# Secret mixed into the visitor fingerprint used to de-duplicate repeat clicks (no raw IPs stored).
+LEAD_HASH_SALT = env("LEAD_HASH_SALT", default="local-dev-lead-salt")
+# WhatsApp Cloud API, used to tell brokers about new leads. Only used when INTEGRATIONS_MODE=live.
+WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
+WHATSAPP_ACCESS_TOKEN = env("WHATSAPP_ACCESS_TOKEN", default="")
+WHATSAPP_LEAD_TEMPLATE = env("WHATSAPP_LEAD_TEMPLATE", default="new_lead")
+
 # JWTs travel in httpOnly cookies (see apps/accounts/cookies.py).
 AUTH_COOKIE_ACCESS = "access_token"
 AUTH_COOKIE_REFRESH = "refresh_token"
@@ -197,6 +206,7 @@ REST_FRAMEWORK = {
         "auth_session": "120/hour",
         "nafath_start": "10/hour",
         "nafath_status": "300/hour",
+        "lead_create": "30/hour",
     },
 }
 

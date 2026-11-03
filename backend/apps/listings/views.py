@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -40,6 +40,7 @@ def _my_listings(user):
         Listing.objects.filter(Q(created_by=user) | Q(agency__admin=user))
         .select_related("city", "district")
         .prefetch_related("photos", "amenities")
+        .annotate(lead_count=Count("leads", distinct=True))
         .distinct()
     )
 

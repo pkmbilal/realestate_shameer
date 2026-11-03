@@ -8,6 +8,7 @@ api_patterns = [
     path("locations/", include("apps.locations.urls")),
     path("brokers/", include("apps.brokers.urls")),
     path("listings/", include("apps.listings.urls")),
+    path("leads/", include("apps.leads.urls")),
 ]
 
 urlpatterns = [
