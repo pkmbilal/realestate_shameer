@@ -238,3 +238,29 @@ class PendingListing(Listing):
         proxy = True
         verbose_name = _("listing to review")
         verbose_name_plural = _("moderation queue")
+
+
+class Favourite(models.Model):
+    """A listing a signed-in user saved. Removed when they un-save it."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="favourites",
+        verbose_name=_("user"),
+    )
+    listing = models.ForeignKey(
+        Listing, on_delete=models.CASCADE, related_name="favourites", verbose_name=_("listing")
+    )
+    created_at = models.DateTimeField(_("saved at"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("favourite")
+        verbose_name_plural = _("favourites")
+        ordering = ("-created_at", "-id")
+        constraints = [
+            models.UniqueConstraint(fields=["user", "listing"], name="favourite_unique_per_user"),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id} ♥ {self.listing_id}"

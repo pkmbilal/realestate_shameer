@@ -23,6 +23,9 @@ mine = "mine/<ref:reference>/"
 urlpatterns = [
     path("", views.PublicListingsView.as_view(), name="listing-list"),
     path("amenities/", views.AmenitiesView.as_view(), name="amenity-list"),
+    path("map/", views.ListingMapView.as_view(), name="listing-map"),
+    path("favourites/", views.FavouritesView.as_view(), name="favourite-list"),
+    path("favourites/ids/", views.FavouriteIdsView.as_view(), name="favourite-ids"),
     path("mine/", views.MyListingsView.as_view(), name="my-listings"),
     path(mine, views.MyListingDetailView.as_view(), name="my-listing"),
     path(f"{mine}submit/", views.SubmitListingView.as_view(), name="my-listing-submit"),
@@ -32,5 +35,6 @@ urlpatterns = [
     ),
     path(f"{mine}photos/", views.PhotosView.as_view(), name="my-listing-photos"),
     path(f"{mine}photos/<int:photo_id>/", views.PhotoDetailView.as_view(), name="my-listing-photo"),
+    path("<ref:reference>/favourite/", views.FavouriteView.as_view(), name="listing-favourite"),
     path("<ref:reference>/", views.PublicListingDetailView.as_view(), name="listing-detail"),
 ]

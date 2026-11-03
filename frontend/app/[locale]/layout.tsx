@@ -5,7 +5,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { routing, rtlLocales } from "@/i18n/routing";
-import { portalName } from "@/lib/config";
+import { portalName, siteUrl } from "@/lib/config";
 
 import "../globals.css";
 
@@ -31,7 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "Metadata" });
 
   return {
-    title: portalName,
+    metadataBase: new URL(siteUrl),
+    title: { default: portalName, template: `%s | ${portalName}` },
     description: t("description"),
     alternates: {
       languages: Object.fromEntries(routing.locales.map((l) => [l, `/${l}`])),

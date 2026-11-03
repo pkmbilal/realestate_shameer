@@ -7,7 +7,10 @@ import OtpLoginForm from "@/components/auth/OtpLoginForm";
 import SiteHeader from "@/components/SiteHeader";
 import { routing } from "@/i18n/routing";
 
-type Props = { params: Promise<{ locale: string }> };
+type Props = {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ next?: string | string[] }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -17,14 +20,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: t("title"), robots: { index: false } };
 }
 
-export default async function LoginPage({ params }: Props) {
+export default async function LoginPage({ params, searchParams }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  return <LoginContent />;
+  const { next } = await searchParams;
+  return <LoginContent next={typeof next === "string" ? next : undefined} />;
 }
 
-function LoginContent() {
+function LoginContent({ next }: { next?: string }) {
   const t = useTranslations("Login");
 
   return (
@@ -35,7 +39,7 @@ function LoginContent() {
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-slate-600">{t("intro")}</p>
         </div>
-        <OtpLoginForm />
+        <OtpLoginForm next={next} />
       </section>
     </main>
   );

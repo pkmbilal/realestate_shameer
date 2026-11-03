@@ -9,7 +9,14 @@ from django.template.response import TemplateResponse
 from django.utils.translation import gettext_lazy as _
 
 from . import services
-from .models import Amenity, Listing, ListingPhoto, ListingStatusChange, PendingListing
+from .models import (
+    Amenity,
+    Favourite,
+    Listing,
+    ListingPhoto,
+    ListingStatusChange,
+    PendingListing,
+)
 
 
 class ReasonForm(forms.Form):
@@ -204,3 +211,20 @@ class AmenityAdmin(admin.ModelAdmin):
     list_display = ("name_en", "name_ar", "slug", "sort_order")
     list_editable = ("sort_order",)
     prepopulated_fields = {"slug": ("name_en",)}
+
+
+@admin.register(Favourite)
+class FavouriteAdmin(admin.ModelAdmin):
+    """Read-only. Shows the user's id only, never their phone number (PDPL)."""
+
+    list_display = ("listing", "user_id", "created_at")
+    list_select_related = ("listing",)
+    search_fields = ("listing__reference",)
+    readonly_fields = ("listing", "user_id", "created_at")
+    fields = readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

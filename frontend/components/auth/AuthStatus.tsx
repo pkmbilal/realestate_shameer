@@ -9,6 +9,7 @@ import { api, type Me } from "@/lib/api/client";
 /** Header item: "Log in" for visitors, or the masked phone and "Log out" for logged-in users. */
 export default function AuthStatus() {
   const t = useTranslations("Auth");
+  const tn = useTranslations("Nav");
   const router = useRouter();
   // undefined = still checking, null = logged out.
   const [me, setMe] = useState<Me | null | undefined>(undefined);
@@ -44,6 +45,12 @@ export default function AuthStatus() {
       <span dir="ltr" className="hidden text-slate-600 sm:inline">
         {me.masked_phone}
       </span>
+      <Link
+        href="/account/favourites"
+        className="font-medium whitespace-nowrap text-slate-700 hover:underline"
+      >
+        {tn("favourites")}
+      </Link>
       <Link
         href={me.is_nafath_verified ? "/account/broker-profile" : "/account/verify"}
         className="font-medium whitespace-nowrap text-emerald-700 hover:underline"

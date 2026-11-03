@@ -8,7 +8,8 @@
     "apiStatus": "API status",
     "statusOk": "Connected",
     "statusDown": "Unavailable",
-    "browseByCity": "Browse by city"
+    "browseByCity": "Browse by city",
+    "browseAll": "Browse all properties"
   },
   "LocaleSwitcher": {
     "label": "العربية"
@@ -86,5 +87,148 @@
     "save": "Save profile",
     "saved": "Your profile has been saved.",
     "generic": "Something went wrong. Please try again."
+  },
+  "Nav": {
+    "search": "Search",
+    "buy": "Buy",
+    "rent": "Rent",
+    "favourites": "Saved"
+  },
+  "Property": {
+    "purpose": {
+      "sale": "for sale",
+      "rent": "for rent"
+    },
+    "purposeTitle": {
+      "sale": "For sale",
+      "rent": "For rent"
+    },
+    "type": {
+      "apartment": "Apartment",
+      "villa": "Villa",
+      "floor": "Floor",
+      "duplex": "Duplex",
+      "townhouse": "Townhouse",
+      "land": "Land",
+      "building": "Building"
+    },
+    "typePlural": {
+      "apartment": "Apartments",
+      "villa": "Villas",
+      "floor": "Floors",
+      "duplex": "Duplexes",
+      "townhouse": "Townhouses",
+      "land": "Land",
+      "building": "Buildings"
+    },
+    "rentPeriod": {
+      "yearly": "/ year",
+      "monthly": "/ month"
+    },
+    "rentPeriodName": {
+      "yearly": "Yearly",
+      "monthly": "Monthly"
+    },
+    "furnishing": {
+      "unfurnished": "Unfurnished",
+      "semi_furnished": "Semi-furnished",
+      "furnished": "Furnished"
+    },
+    "completion": {
+      "ready": "Ready",
+      "off_plan": "Off-plan"
+    },
+    "beds": "{count, plural, =0 {Studio} one {# bed} other {# beds}}",
+    "baths": "{count, plural, one {# bath} other {# baths}}",
+    "area": "{area} m²",
+    "priceOnRequest": "Price on request",
+    "featured": "Featured",
+    "defaultTitle": "{type} {purpose} in {place}"
+  },
+  "Search": {
+    "metaTitle": "{what} {purpose} in {place}",
+    "metaTitleAll": "Properties for sale and rent in {place}",
+    "everywhere": "the Eastern Province",
+    "properties": "Properties",
+    "titleAll": "Properties for sale and rent",
+    "results": "{count, plural, =0 {No properties found} one {# property} other {# properties}}",
+    "noResults": "No listings match your search. Try removing some filters.",
+    "loadError": "We could not load the listings. Please try again.",
+    "filters": "Filters",
+    "anyPurpose": "Buy or rent",
+    "city": "City",
+    "anyCity": "All cities",
+    "district": "District",
+    "anyDistrict": "All districts",
+    "propertyType": "Property type",
+    "anyType": "Any type",
+    "price": "Price (SAR)",
+    "min": "Min",
+    "max": "Max",
+    "beds": "Bedrooms",
+    "baths": "Bathrooms",
+    "any": "Any",
+    "plus": "{count}+",
+    "area": "Area (m²)",
+    "completion": "Ready / off-plan",
+    "furnishing": "Furnishing",
+    "rentPeriod": "Rent period",
+    "apply": "Show results",
+    "reset": "Clear filters",
+    "sort": "Sort",
+    "sortOptions": {
+      "newest": "Newest",
+      "price_asc": "Lowest price",
+      "price_desc": "Highest price"
+    },
+    "viewList": "List",
+    "viewMap": "Map",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pages}",
+    "mapTruncated": "Showing the first {count} listings here. Zoom in to see more.",
+    "mapLoading": "Loading map…",
+    "mapError": "The map could not be loaded."
+  },
+  "Listing": {
+    "reference": "Ref. {reference}",
+    "description": "Description",
+    "amenities": "Amenities",
+    "location": "Location",
+    "advertiser": "Advertised by",
+    "advertiserType": {
+      "broker": "Licensed broker",
+      "agency": "Agency",
+      "owner": "Owner"
+    },
+    "falLicence": "FAL licence",
+    "regaBadge": "REGA-licensed ad",
+    "regaLicence": "Ad licence no.",
+    "regaExpires": "Valid until {date}",
+    "noPhotos": "No photos yet",
+    "photoAlt": "Photo {n} of {total}",
+    "facts": {
+      "type": "Type",
+      "purpose": "Purpose",
+      "area": "Area",
+      "beds": "Bedrooms",
+      "baths": "Bathrooms",
+      "furnishing": "Furnishing",
+      "completion": "Completion",
+      "rentPeriod": "Rent period"
+    },
+    "contactSoon": "Contact buttons (WhatsApp, call, enquiry) are coming soon.",
+    "views": "{count, plural, one {# view} other {# views}}",
+    "backToSearch": "Back to search"
+  },
+  "Favourites": {
+    "title": "Saved properties",
+    "save": "Save",
+    "saved": "Saved",
+    "empty": "You have not saved any properties yet.",
+    "browse": "Browse properties",
+    "loginNeeded": "Log in to see your saved properties.",
+    "login": "Log in",
+    "error": "Could not update your saved properties. Please try again."
   }
 }

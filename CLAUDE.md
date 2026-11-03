@@ -117,6 +117,12 @@ docker compose down                                  # stop (add -v to wipe data
 - **Money** is stored as integer **halalas** (1 SAR = 100). **Credits** are integers. Never use floats for either.
 - Settings come from environment variables via `django-environ`. Never commit secrets.
 
+**Git workflow**
+- Every main feature (one item group from §7, e.g. listings or wallet) gets its own branch from `master`, named `feat/<short-name>`.
+- Commit all the work for that feature to its branch.
+- **Never merge into `master`, or push `master`, until the owner explicitly says so.** When a feature is done, report the branch name and wait.
+- Fixes to a feature that is still waiting for review go on that same feature branch.
+
 **Backend (Django)**
 - One Django app per domain (§4). Business logic goes in `services.py`, not in views or serializers.
 - **The wallet is an append-only ledger.** `CreditTransaction` rows are never edited or deleted. Balance = sum of the ledger, cached on `Wallet` and updated inside `transaction.atomic()` with `select_for_update()`.
@@ -226,7 +232,7 @@ Keep the data model ready for these, but don't implement them early.
 3. New migrations are created and applied; no migration is edited after it has been merged.
 4. The UI works in Arabic (RTL) and English, on mobile width (390 px) and on desktop.
 5. Any new env var is added to `.env.example` with a comment.
-6. A short plain-language summary for the owner: what changed, how to try it, and any follow-up.
+6. A short plain-language summary for the owner: what changed, how to try it, any follow-up, and the feature branch name. The branch is left unmerged until the owner approves (see Git workflow in §6).
 
 ## 10. Deployment — Oracle Cloud (later, after phase 1 is ready locally)
 

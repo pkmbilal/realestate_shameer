@@ -216,3 +216,99 @@ class PublicListingSerializer(PublicListingCardSerializer):
             "view_count",
         )
         read_only_fields = fields
+
+
+# --- Search ----------------------------------------------------------------------------
+
+
+class CommaListField(serializers.ListField):
+    """Accepts `?type=villa,apartment` as well as repeated `?type=villa&type=apartment`."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            data = [part for part in data.split(",") if part]
+        elif isinstance(data, list):
+            data = [part for item in data for part in str(item).split(",") if part]
+        return super().to_internal_value(data)
+
+    def get_value(self, dictionary):
+        if self.field_name not in dictionary:
+            return serializers.empty
+        if hasattr(dictionary, "getlist"):
+            return dictionary.getlist(self.field_name)
+        return dictionary[self.field_name]
+
+
+class SearchParamsSerializer(serializers.Serializer):
+    """Validates the public search query string. Prices come in as whole SAR."""
+
+    MAX_SAR = 10_000_000_000  # keeps halalas well inside a bigint
+
+    purpose = serializers.ChoiceField(choices=Listing.Purpose.choices, required=False)
+    type = CommaListField(
+        child=serializers.ChoiceField(choices=Listing.PropertyType.choices),
+        required=False,
+        max_length=len(Listing.PropertyType.choices),
+    )
+    city = serializers.SlugField(required=False, max_length=100)
+    district = serializers.SlugField(required=False, max_length=100)
+    price_min = serializers.IntegerField(required=False, min_value=0, max_value=MAX_SAR)
+    price_max = serializers.IntegerField(required=False, min_value=0, max_value=MAX_SAR)
+    beds_min = serializers.IntegerField(required=False, min_value=0, max_value=50)
+    baths_min = serializers.IntegerField(required=False, min_value=0, max_value=50)
+    area_min = serializers.IntegerField(required=False, min_value=0, max_value=10_000_000)
+    area_max = serializers.IntegerField(required=False, min_value=0, max_value=10_000_000)
+    completion = serializers.ChoiceField(choices=Listing.Completion.choices, required=False)
+    furnishing = serializers.ChoiceField(choices=Listing.Furnishing.choices, required=False)
+    rent_period = serializers.ChoiceField(choices=Listing.RentPeriod.choices, required=False)
+    sort = serializers.ChoiceField(
+        choices=("newest", "price_asc", "price_desc"), required=False, default="newest"
+    )
+    bbox = serializers.CharField(required=False, max_length=100)
+
+    def validate_bbox(self, value):
+        """`minLng,minLat,maxLng,maxLat` in WGS84 degrees."""
+        try:
+            min_lng, min_lat, max_lng, max_lat = (float(v) for v in value.split(","))
+        except ValueError:
+            raise serializers.ValidationError("bbox must be minLng,minLat,maxLng,maxLat") from None
+        if not (-180 <= min_lng < max_lng <= 180 and -90 <= min_lat < max_lat <= 90):
+            raise serializers.ValidationError("bbox is out of range")
+        return (min_lng, min_lat, max_lng, max_lat)
+
+    def validate(self, attrs):
+        for low, high in (("price_min", "price_max"), ("area_min", "area_max")):
+            if attrs.get(low) is not None and attrs.get(high) is not None:
+                if attrs[low] > attrs[high]:
+                    raise serializers.ValidationError({high: "must be at least the minimum"})
+        for key in ("price_min", "price_max"):
+            if attrs.get(key) is not None:
+                attrs[key] = attrs[key] * 100  # SAR → halalas
+        return attrs
+
+
+class MapPinSerializer(serializers.ModelSerializer):
+    """The minimum a map pin needs; the card is loaded when the pin is tapped."""
+
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    is_featured = serializers.BooleanField(source="featured_now", read_only=True)
+
+    class Meta:
+        model = Listing
+        fields = (
+            "reference",
+            "latitude",
+            "longitude",
+            "price_halalas",
+            "purpose",
+            "rent_period",
+            "is_featured",
+        )
+        read_only_fields = fields
+
+    def get_latitude(self, obj):
+        return obj.location.y
+
+    def get_longitude(self, obj):
+        return obj.location.x
