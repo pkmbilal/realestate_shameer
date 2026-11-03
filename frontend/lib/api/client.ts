@@ -57,10 +57,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-    const { code, detail, retry_after, ...rest } = body;
+    const { code, detail, retry_after, fields, ...rest } = body;
     const fieldErrors = Object.fromEntries(
       Object.entries(rest).filter(([, value]) => Array.isArray(value)),
     ) as Record<string, string[]>;
+    // Our service errors send {code: "invalid", fields: {name: "required"}}.
+    if (fields && typeof fields === "object") {
+      for (const [name, error] of Object.entries(fields as Record<string, unknown>)) {
+        if (typeof error === "string") fieldErrors[name] = [error];
+      }
+    }
     throw new ApiError(
       response.status,
       `${options.method ?? "GET"} ${path} failed`,
@@ -249,6 +255,27 @@ export function toQuery(params: Record<string, unknown>): string {
   return text ? `?${text}` : "";
 }
 
+// --- Leads -----------------------------------------------------------------------------
+
+export type LeadChannel = "whatsapp" | "call" | "form";
+
+export type LeadInput = {
+  listing: string;
+  channel: LeadChannel;
+  locale: string;
+  name?: string;
+  phone?: string;
+  message?: string;
+};
+
+/** The contact link comes back only after the lead is logged; it is never in listing data. */
+export type LeadCreated = {
+  id: number;
+  channel: LeadChannel;
+  whatsapp_url?: string;
+  tel_url?: string;
+};
+
 export const api = {
   health: () => request<HealthResponse>("/api/health/", { cache: "no-store" }),
 
@@ -290,6 +317,11 @@ export const api = {
       request<void>(`/api/listings/${encodeURIComponent(reference)}/favourite/`, {
         method: "DELETE",
       }),
+  },
+
+  leads: {
+    create: (lead: LeadInput) =>
+      request<LeadCreated>("/api/leads/", { method: "POST", json: lead }),
   },
 
   nafath: {
