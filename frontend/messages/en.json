@@ -92,7 +92,8 @@
     "search": "Search",
     "buy": "Buy",
     "rent": "Rent",
-    "favourites": "Saved"
+    "favourites": "Saved",
+    "dashboard": "Dashboard"
   },
   "Property": {
     "purpose": {
@@ -252,6 +253,131 @@
       "rateLimited": "Too many attempts. Please try again later.",
       "notActive": "This listing is no longer available.",
       "generic": "Something went wrong. Please try again."
+    }
+  },
+  "Dashboard": {
+    "title": "My listings",
+    "profile": "My profile",
+    "newListing": "New listing",
+    "empty": "You have no listings yet. Start one with your REGA ad licence number.",
+    "loadError": "Couldn't load your listings. Please refresh the page.",
+    "noPhoto": "No photo",
+    "licenceExpires": "Licence until",
+    "postExpires": "Live until",
+    "views": "{count, plural, one {# view} other {# views}}",
+    "leads": "{count, plural, one {# lead} other {# leads}}",
+    "moderationNote": "Note from our review team: {note}",
+    "incompleteHint": "Add the missing details, then submit it for review.",
+    "backToList": "Back to my listings",
+    "status": {
+      "draft": "Draft",
+      "pending_review": "In review",
+      "active": "Live",
+      "expired": "Expired",
+      "taken_down": "Taken down",
+      "archived": "Archived"
+    },
+    "actions": {
+      "edit": "Edit",
+      "submit": "Submit for review",
+      "view": "View",
+      "archive": "Archive",
+      "confirmArchive": "Yes, archive",
+      "cancel": "Cancel"
+    },
+    "gate": {
+      "error": "Something went wrong. Please refresh the page.",
+      "loginNeeded": "Log in to manage your listings.",
+      "login": "Log in",
+      "verifyNeeded": "Verify your identity with Nafath before posting listings.",
+      "verify": "Verify with Nafath",
+      "profileNeeded": "Complete your broker profile before posting listings.",
+      "profile": "Complete profile"
+    },
+    "start": {
+      "title": "New listing",
+      "intro": "Every listing starts from its REGA ad licence. We fetch the property details from REGA, then you add the price, photos and description.",
+      "licenceLabel": "REGA ad licence number",
+      "hint": "Digits only, as shown on the licence.",
+      "submit": "Continue",
+      "checking": "Checking with REGA…"
+    },
+    "editor": {
+      "title": "Edit listing",
+      "notFound": "We couldn't find this listing in your account.",
+      "notEditable": "This listing can no longer be edited.",
+      "activeWarning": "This listing is live. Saving changes or photos sends it back to review, and it stays hidden until it is approved again.",
+      "pendingNote": "This listing is waiting for review. You can still make changes.",
+      "regaTitle": "From your REGA licence",
+      "regaHint": "These details come from REGA and can't be changed here.",
+      "facts": {
+        "purpose": "Purpose",
+        "type": "Type",
+        "area": "Area",
+        "place": "Location"
+      },
+      "detailsTitle": "Listing details",
+      "choose": "Choose…",
+      "notSpecified": "Not specified",
+      "fields": {
+        "price": "Price (SAR)",
+        "rent_period": "Rent period",
+        "bedrooms": "Bedrooms",
+        "bathrooms": "Bathrooms",
+        "furnishing": "Furnishing",
+        "completion": "Completion",
+        "title_ar": "Title (Arabic)",
+        "title_en": "Title (English)",
+        "description_ar": "Description (Arabic)",
+        "description_en": "Description (English)",
+        "amenities": "Amenities"
+      },
+      "checkField": "Please check this value.",
+      "missingTitle": "Still needed before you can submit:",
+      "missing": {
+        "price_halalas": "Price",
+        "rent_period": "Rent period",
+        "title": "A title (Arabic or English)",
+        "photos": "At least one photo"
+      },
+      "save": "Save",
+      "saved": "Saved.",
+      "submit": "Save and submit for review"
+    },
+    "photos": {
+      "title": "Photos",
+      "hint": "JPG, PNG or WebP, up to 10 MB each. The first photo is the cover.",
+      "add": "Add photos",
+      "uploading": "Uploading {done} of {total}…",
+      "none": "No photos yet.",
+      "cover": "Cover",
+      "alt": "Photo {n}",
+      "moveEarlier": "Move earlier",
+      "moveLater": "Move later",
+      "delete": "Delete photo"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "invalid": "Please check the highlighted fields.",
+      "invalid_licence_number": "Enter a valid licence number (digits only).",
+      "not_found": "REGA has no ad licence with this number.",
+      "licence_expired": "This ad licence has expired. Renew it with REGA first.",
+      "licence_not_yours": "This ad licence was issued to another advertiser.",
+      "licence_in_use": "A listing with this licence already exists.",
+      "unsupported_city": "We don't cover this licence's city yet.",
+      "nafath_required": "Verify your identity with Nafath first.",
+      "broker_profile_required": "Complete your broker profile first.",
+      "agency_profile_required": "Complete your agency profile first.",
+      "not_an_advertiser": "Your account can't post listings.",
+      "advertiser_required": "Your account can't post listings.",
+      "not_editable": "This listing can no longer be edited.",
+      "invalid_status": "This listing's status has changed. Refresh the page.",
+      "incomplete": "Some details are still missing.",
+      "unsupported_photo_type": "Use JPG, PNG or WebP photos.",
+      "photo_too_large": "That photo is too large (10 MB max).",
+      "too_many_photos": "You've reached the photo limit for this listing.",
+      "photo_not_uploaded": "A photo didn't finish uploading. Please try again.",
+      "upload_failed": "A photo didn't upload. Check your connection and try again."
     }
   }
 }

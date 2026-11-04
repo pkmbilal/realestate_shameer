@@ -6,6 +6,11 @@ import { useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api, type Me } from "@/lib/api/client";
 
+/** Verified owners, brokers and agency admins may post listings, so they get the dashboard. */
+function isAdvertiser(me: Me): boolean {
+  return me.is_nafath_verified && ["owner", "broker", "agency_admin"].includes(me.role);
+}
+
 /** Header item: "Log in" for visitors, or the masked phone and "Log out" for logged-in users. */
 export default function AuthStatus() {
   const t = useTranslations("Auth");
@@ -51,12 +56,21 @@ export default function AuthStatus() {
       >
         {tn("favourites")}
       </Link>
-      <Link
-        href={me.is_nafath_verified ? "/account/broker-profile" : "/account/verify"}
-        className="font-medium whitespace-nowrap text-emerald-700 hover:underline"
-      >
-        {t("account")}
-      </Link>
+      {isAdvertiser(me) ? (
+        <Link
+          href="/dashboard"
+          className="font-medium whitespace-nowrap text-emerald-700 hover:underline"
+        >
+          {tn("dashboard")}
+        </Link>
+      ) : (
+        <Link
+          href={me.is_nafath_verified ? "/account/broker-profile" : "/account/verify"}
+          className="font-medium whitespace-nowrap text-emerald-700 hover:underline"
+        >
+          {t("account")}
+        </Link>
+      )}
       <button
         type="button"
         onClick={logout}

@@ -230,6 +230,69 @@ export type ListingDetail = ListingCard & {
 
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 
+// --- Advertiser dashboard ("my listings") --------------------------------------------
+
+export type ListingStatus =
+  | "draft"
+  | "pending_review"
+  | "active"
+  | "expired"
+  | "taken_down"
+  | "archived";
+
+/** Statuses in which the advertiser may still edit the listing and its photos. */
+export const EDITABLE_STATUSES: readonly ListingStatus[] = ["draft", "pending_review", "active"];
+
+/** The fields the advertiser fills in. Everything else comes from REGA and is read-only. */
+export type MyListingInput = {
+  price_halalas: number | null;
+  rent_period: RentPeriod | "";
+  bedrooms: number | null;
+  bathrooms: number | null;
+  furnishing: Furnishing | "";
+  completion: Completion;
+  title_ar: string;
+  title_en: string;
+  description_ar: string;
+  description_en: string;
+  amenity_ids: number[];
+};
+
+export type MyListing = MyListingInput & {
+  id: number;
+  reference: string;
+  status: ListingStatus;
+  moderation_note: string;
+  /** What is still needed before submitting: "price_halalas", "rent_period", "title", "photos". */
+  missing_fields: string[];
+  licence_number: string;
+  licence_expires_on: string;
+  purpose: Purpose;
+  property_type: PropertyType;
+  area_m2: number;
+  city: PlaceRef;
+  district: PlaceRef | null;
+  latitude: number;
+  longitude: number;
+  photos: Photo[];
+  published_at: string | null;
+  post_expires_at: string | null;
+  featured_until: string | null;
+  view_count: number;
+  lead_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+/** A short-lived URL to PUT one photo straight into file storage. */
+export type PhotoUpload = {
+  key: string;
+  upload_url: string;
+  method: "PUT";
+  headers: Record<string, string>;
+  expires_in: number;
+};
+
 export type MapPin = {
   reference: string;
   latitude: number;
@@ -256,6 +319,23 @@ export function toQuery(params: Record<string, unknown>): string {
 }
 
 // --- Leads -----------------------------------------------------------------------------
+
+function mine(reference: string): string {
+  return `/api/listings/mine/${encodeURIComponent(reference)}/`;
+}
+
+/**
+ * Upload one file straight to file storage using a URL from `api.myListings.presignPhoto`.
+ * This is the only request that does not go to our API, so it lives here with the client.
+ */
+export async function uploadToStorage(upload: PhotoUpload, file: File): Promise<void> {
+  const response = await fetch(upload.upload_url, {
+    method: upload.method,
+    headers: upload.headers,
+    body: file,
+  });
+  if (!response.ok) throw new ApiError(response.status, "photo upload failed", "upload_failed");
+}
 
 export type LeadChannel = "whatsapp" | "call" | "form";
 
@@ -300,6 +380,42 @@ export const api = {
       request<ListingDetail>(`/api/listings/${encodeURIComponent(reference)}/`, {
         cache: "no-store",
       }),
+    amenities: () => request<Amenity[]>("/api/listings/amenities/", { cache: "no-store" }),
+  },
+
+  /** The logged-in advertiser's own listings. Needs a Nafath-verified owner/broker/agency. */
+  myListings: {
+    list: () => request<MyListing[]>("/api/listings/mine/", { cache: "no-store" }),
+    get: (reference: string) =>
+      request<MyListing>(mine(reference), { cache: "no-store" }),
+    /** Start a draft from a REGA ad licence; REGA fills in type, area, location, etc. */
+    start: (licenceNumber: string) =>
+      request<MyListing>("/api/listings/mine/", {
+        method: "POST",
+        json: { licence_number: licenceNumber },
+      }),
+    update: (reference: string, input: Partial<MyListingInput>) =>
+      request<MyListing>(mine(reference), { method: "PATCH", json: input }),
+    submit: (reference: string) =>
+      request<MyListing>(`${mine(reference)}submit/`, { method: "POST" }),
+    archive: (reference: string) =>
+      request<MyListing>(`${mine(reference)}archive/`, { method: "POST" }),
+    presignPhoto: (reference: string, file: { type: string; size: number }) =>
+      request<PhotoUpload>(`${mine(reference)}photos/presign/`, {
+        method: "POST",
+        json: { content_type: file.type, size_bytes: file.size },
+      }),
+    /** Call after the file has been uploaded to the presigned URL. */
+    confirmPhoto: (reference: string, key: string) =>
+      request<Photo>(`${mine(reference)}photos/`, { method: "POST", json: { key } }),
+    /** The first photo becomes the cover. */
+    reorderPhotos: (reference: string, photoIds: number[]) =>
+      request<MyListing>(`${mine(reference)}photos/`, {
+        method: "PUT",
+        json: { photo_ids: photoIds },
+      }),
+    deletePhoto: (reference: string, photoId: number) =>
+      request<void>(`${mine(reference)}photos/${photoId}/`, { method: "DELETE" }),
   },
 
   favourites: {
