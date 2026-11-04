@@ -217,7 +217,6 @@
       "completion": "Completion",
       "rentPeriod": "Rent period"
     },
-    "contactSoon": "Contact buttons (WhatsApp, call, enquiry) are coming soon.",
     "views": "{count, plural, one {# view} other {# views}}",
     "backToSearch": "Back to search"
   },
@@ -230,5 +229,29 @@
     "loginNeeded": "Log in to see your saved properties.",
     "login": "Log in",
     "error": "Could not update your saved properties. Please try again."
+  },
+  "Leads": {
+    "whatsapp": "WhatsApp",
+    "call": "Call",
+    "enquire": "Enquire",
+    "callNumber": "Advertiser's number:",
+    "form": {
+      "title": "Send an enquiry",
+      "name": "Your name",
+      "phone": "Mobile number",
+      "message": "Message (optional)",
+      "messagePlaceholder": "Is this property still available?",
+      "privacy": "Your name and number are shared only with this advertiser.",
+      "send": "Send enquiry",
+      "sending": "Sending…",
+      "sent": "Your enquiry was sent. The advertiser will contact you soon."
+    },
+    "errors": {
+      "required": "Please enter your name.",
+      "invalidPhone": "Enter a valid mobile number, e.g. 05XXXXXXXX",
+      "rateLimited": "Too many attempts. Please try again later.",
+      "notActive": "This listing is no longer available.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

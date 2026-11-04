@@ -84,6 +84,8 @@ class MyListingSerializer(PlaceMixin, serializers.ModelSerializer):
         source="amenities", many=True, queryset=Amenity.objects.all(), required=False
     )
     photos = PhotoSerializer(many=True, read_only=True)
+    # Annotated by the advertiser views; 0 when the listing was loaded without it.
+    lead_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Listing
@@ -104,6 +106,7 @@ class MyListingSerializer(PlaceMixin, serializers.ModelSerializer):
             "post_expires_at",
             "featured_until",
             "view_count",
+            "lead_count",
             "created_at",
             "updated_at",
         )

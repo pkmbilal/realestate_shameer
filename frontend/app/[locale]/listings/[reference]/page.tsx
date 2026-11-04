@@ -6,6 +6,7 @@ import { cache } from "react";
 
 import FavouriteButton from "@/components/favourites/FavouriteButton";
 import FavouritesProvider from "@/components/favourites/FavouritesProvider";
+import ContactPanel from "@/components/leads/ContactPanel";
 import Gallery from "@/components/listings/Gallery";
 import ListingLocationMap from "@/components/listings/ListingLocationMap";
 import PriceTag from "@/components/listings/PriceTag";
@@ -146,7 +147,7 @@ export default async function ListingPage({ params }: Props) {
 
   return (
     <FavouritesProvider>
-      <main className="mx-auto flex min-h-dvh max-w-5xl flex-col gap-5 px-4 py-6 sm:px-6">
+      <main className="mx-auto flex min-h-dvh max-w-5xl flex-col gap-5 px-4 pt-6 pb-24 sm:px-6 lg:pb-6">
         <SiteHeader />
         <script
           type="application/ld+json"
@@ -240,8 +241,8 @@ export default async function ListingPage({ params }: Props) {
                   {localized(advertiser.agency.name_ar, advertiser.agency.name_en, locale)}
                 </p>
               )}
-              <p className="mt-2 rounded-md bg-slate-50 p-2 text-xs text-slate-500">{t("contactSoon")}</p>
             </section>
+            <ContactPanel reference={listing.reference} />
           </aside>
         </div>
       </main>
