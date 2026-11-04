@@ -62,6 +62,7 @@ def test_start_edit_and_submit_through_api(s3):
     ref = body["reference"]
     assert body["status"] == "draft"
     assert body["licence_number"] == "7400000001"
+    assert {"price_halalas", "title", "photos"} <= set(body["missing_fields"])
     assert body["city"]["name_en"] in ("Dammam", "Khobar", "Dhahran", "Jubail")
     original_area = body["area_m2"]
 
@@ -86,6 +87,8 @@ def test_start_edit_and_submit_through_api(s3):
     assert body["area_m2"] == original_area
     assert body["licence_number"] == "7400000001"
     assert body["status"] == "draft"
+    assert "price_halalas" not in body["missing_fields"]
+    assert "title" not in body["missing_fields"]
 
     response = client.post(reverse("my-listing-submit", args=[ref]))
     assert response.status_code == 400

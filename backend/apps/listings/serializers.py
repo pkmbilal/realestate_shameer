@@ -4,6 +4,7 @@ from rest_framework import serializers
 from apps.brokers.serializers import AgencySummarySerializer
 from apps.core.imgproxy import imgproxy_url
 
+from . import services
 from .models import Amenity, Listing, ListingPhoto
 
 
@@ -86,6 +87,8 @@ class MyListingSerializer(PlaceMixin, serializers.ModelSerializer):
     photos = PhotoSerializer(many=True, read_only=True)
     # Annotated by the advertiser views; 0 when the listing was loaded without it.
     lead_count = serializers.IntegerField(read_only=True, default=0)
+    # What is still needed before the listing can be submitted (empty when complete).
+    missing_fields = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -94,6 +97,7 @@ class MyListingSerializer(PlaceMixin, serializers.ModelSerializer):
             "reference",
             "status",
             "moderation_note",
+            "missing_fields",
             *REGA_FIELDS,
             "city",
             "district",
@@ -113,6 +117,9 @@ class MyListingSerializer(PlaceMixin, serializers.ModelSerializer):
         read_only_fields = tuple(
             f for f in fields if f not in ADVERTISER_FIELDS and f != "amenity_ids"
         )
+
+    def get_missing_fields(self, obj):
+        return services.missing_fields(obj)
 
     def validate(self, attrs):
         rent_period = attrs.get("rent_period")
