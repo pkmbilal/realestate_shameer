@@ -276,12 +276,43 @@ export type MyListing = MyListingInput & {
   longitude: number;
   photos: Photo[];
   published_at: string | null;
+  /** When it last moved to the top of "newest" (first publish or a paid refresh). */
+  refreshed_at: string | null;
   post_expires_at: string | null;
   featured_until: string | null;
   view_count: number;
   lead_count: number;
   created_at: string;
   updated_at: string;
+};
+
+// --- Credits wallet ---
+
+export type WalletAction = "post" | "refresh" | "feature";
+
+/** What an action costs. 0 credits means it is free right now. `days` is used by "feature". */
+export type CreditPrice = { action: WalletAction; credits: number; days: number };
+
+export type WalletSummary = {
+  /** Owners post for free and have no wallet. */
+  has_wallet: boolean;
+  balance: number;
+  prices: CreditPrice[];
+};
+
+export type CreditTransactionKind = "grant" | "topup" | "spend" | "refund" | "adjustment";
+
+export type CreditTransaction = {
+  id: number;
+  kind: CreditTransactionKind;
+  action: WalletAction | "";
+  /** Positive adds credits, negative takes them. */
+  amount: number;
+  balance_after: number;
+  /** Listing reference, if the entry is about a listing. */
+  listing: string | null;
+  note: string;
+  created_at: string;
 };
 
 /** A short-lived URL to PUT one photo straight into file storage. */
@@ -370,6 +401,15 @@ export const api = {
 
   me: () => request<Me>("/api/accounts/me/", { cache: "no-store" }),
 
+  /** The logged-in broker's or agency's credits. Needs a Nafath-verified advertiser. */
+  wallet: {
+    get: () => request<WalletSummary>("/api/wallet/", { cache: "no-store" }),
+    transactions: (page = 1) =>
+      request<Page<CreditTransaction>>(`/api/wallet/transactions/${toQuery({ page })}`, {
+        cache: "no-store",
+      }),
+  },
+
   listings: {
     search: (params: SearchParams) =>
       request<Page<ListingCard>>(`/api/listings/${toQuery(params)}`, { cache: "no-store" }),
@@ -400,6 +440,12 @@ export const api = {
       request<MyListing>(`${mine(reference)}submit/`, { method: "POST" }),
     archive: (reference: string) =>
       request<MyListing>(`${mine(reference)}archive/`, { method: "POST" }),
+    /** Spend credits to move a live listing back to the top of "newest". */
+    refresh: (reference: string) =>
+      request<MyListing>(`${mine(reference)}refresh/`, { method: "POST" }),
+    /** Spend credits to pin a live listing on top of search for a few days. */
+    feature: (reference: string) =>
+      request<MyListing>(`${mine(reference)}feature/`, { method: "POST" }),
     presignPhoto: (reference: string, file: { type: string; size: number }) =>
       request<PhotoUpload>(`${mine(reference)}photos/presign/`, {
         method: "POST",

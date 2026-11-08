@@ -107,6 +107,7 @@ class MyListingSerializer(PlaceMixin, serializers.ModelSerializer):
             "amenity_ids",
             "photos",
             "published_at",
+            "refreshed_at",
             "post_expires_at",
             "featured_until",
             "view_count",

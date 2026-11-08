@@ -21,6 +21,10 @@ const KNOWN = [
   "too_many_photos",
   "photo_not_uploaded",
   "upload_failed",
+  "insufficient_credits",
+  "not_active",
+  "paid_actions_unavailable",
+  "feature_unavailable",
   "invalid",
 ] as const;
 

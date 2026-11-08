@@ -1,0 +1,20 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <p>{% translate "A ledger entry will be added to each of these wallets. The note is saved with it." %}</p>
+  <ul>
+    {% for wallet in wallets %}
+      <li>{{ wallet.holder_name }} — {% translate "balance" %}: {{ wallet.balance }}</li>
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ wallet.pk }}">
+    {% endfor %}
+  </ul>
+  {{ form.as_p }}
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="apply" value="1">
+  <input type="submit" value="{{ title }}" class="default">
+  <a href="" class="button cancel-link">{% translate "Cancel" %}</a>
+</form>
+{% endblock %}
