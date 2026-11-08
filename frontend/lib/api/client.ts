@@ -315,6 +315,43 @@ export type CreditTransaction = {
   created_at: string;
 };
 
+// --- Top-ups and invoices ---
+
+/** A credit pack on sale. Price in halalas (1 SAR = 100), VAT included. */
+export type TopUpPackage = {
+  id: number;
+  name_ar: string;
+  name_en: string;
+  credits: number;
+  price_halalas: number;
+};
+
+export type PaymentStatus = "pending" | "paid" | "failed" | "expired";
+
+export type TopUp = {
+  id: number;
+  status: PaymentStatus;
+  credits: number;
+  amount_halalas: number;
+  package_name_ar: string;
+  package_name_en: string;
+  /** The wallet balance right now. */
+  balance: number;
+  /** Set once the e-invoice has been issued (shortly after payment). */
+  invoice_id: number | null;
+  paid_at: string | null;
+  created_at: string;
+};
+
+export type Invoice = {
+  id: number;
+  number: string;
+  issued_at: string;
+  credits: number;
+  total_halalas: number;
+  vat_halalas: number;
+};
+
 /** A short-lived URL to PUT one photo straight into file storage. */
 export type PhotoUpload = {
   key: string;
@@ -408,6 +445,26 @@ export const api = {
       request<Page<CreditTransaction>>(`/api/wallet/transactions/${toQuery({ page })}`, {
         cache: "no-store",
       }),
+  },
+
+  /** Buying credits. The browser is sent to the gateway's checkout page, then comes back. */
+  topUps: {
+    packages: () => request<TopUpPackage[]>("/api/payments/packages/", { cache: "no-store" }),
+    start: (packageId: number, locale: string) =>
+      request<{ payment_id: number; checkout_url: string }>("/api/payments/top-ups/", {
+        method: "POST",
+        json: { package_id: packageId, locale },
+      }),
+    /** Also asks the gateway for news if the payment is still pending. */
+    get: (id: number) =>
+      request<TopUp>(`/api/payments/top-ups/${id}/`, { cache: "no-store" }),
+  },
+
+  invoices: {
+    list: (page = 1) =>
+      request<Page<Invoice>>(`/api/invoices/${toQuery({ page })}`, { cache: "no-store" }),
+    /** A link the browser can open to download the PDF (sent with the login cookie). */
+    pdfUrl: (id: number) => `${baseUrl}/api/invoices/${id}/pdf/`,
   },
 
   listings: {

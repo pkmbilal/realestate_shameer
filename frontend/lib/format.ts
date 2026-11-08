@@ -22,6 +22,16 @@ export function formatSar(halalas: number, locale: string): string {
   }).format(Math.round(halalas / 100));
 }
 
+/** With halalas, for payments and invoices: 1_030_450 → "SAR 10,304.50". */
+export function formatSarExact(halalas: number, locale: string): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
+    style: "currency",
+    currency: "SAR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(halalas / 100);
+}
+
 /** Short price for map pins: 850K, 1.2M. */
 export function formatSarShort(halalas: number, locale: string): string {
   return new Intl.NumberFormat(intlLocale(locale), {

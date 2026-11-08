@@ -3,13 +3,15 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { Link } from "@/i18n/navigation";
 import {
   api,
   type CreditTransaction,
+  type Invoice,
   type Page,
   type WalletSummary,
 } from "@/lib/api/client";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatDate, formatNumber, formatSarExact } from "@/lib/format";
 
 /** The advertiser's credit balance, current prices and wallet history. */
 export default function WalletOverview() {
@@ -37,6 +39,7 @@ export default function WalletOverview() {
       <BalanceCard balance={wallet.balance} />
       <Prices prices={wallet.prices} />
       <History />
+      <Invoices />
     </div>
   );
 }
@@ -52,16 +55,12 @@ function BalanceCard({ balance }: { balance: number }) {
           {t("credits", { count: balance, value: formatNumber(balance, locale) })}
         </p>
       </div>
-      <div className="flex flex-col items-start gap-1 sm:items-end">
-        <button
-          type="button"
-          disabled
-          className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white disabled:opacity-50"
-        >
-          {t("topUp")}
-        </button>
-        <p className="text-xs text-emerald-900">{t("topUpSoon")}</p>
-      </div>
+      <Link
+        href="/dashboard/wallet/top-up"
+        className="self-start rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 sm:self-auto"
+      >
+        {t("topUp")}
+      </Link>
     </section>
   );
 }
@@ -174,6 +173,63 @@ function History() {
         >
           {t("loadMore")}
         </button>
+      )}
+    </section>
+  );
+}
+
+function Invoices() {
+  const t = useTranslations("Dashboard.Wallet");
+  const locale = useLocale();
+  // undefined = loading, null = failed.
+  const [invoices, setInvoices] = useState<Invoice[] | null | undefined>(undefined);
+
+  useEffect(() => {
+    api.invoices
+      .list()
+      .then((page) => setInvoices(page.results))
+      .catch(() => setInvoices(null));
+  }, []);
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-lg font-semibold">{t("invoicesTitle")}</h2>
+      {invoices === undefined && <div className="h-16" aria-busy />}
+      {invoices === null && <p className="text-red-700">{t("loadError")}</p>}
+      {invoices?.length === 0 && <p className="text-slate-600">{t("invoicesEmpty")}</p>}
+      {invoices && invoices.length > 0 && (
+        <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200">
+          {invoices.map((invoice) => (
+            <li
+              key={invoice.id}
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm"
+            >
+              <div className="flex flex-col">
+                <span className="font-medium" dir="ltr">
+                  {invoice.number}
+                </span>
+                <span className="text-slate-500">
+                  {formatDate(invoice.issued_at, locale)} ·{" "}
+                  {t("credits", {
+                    count: invoice.credits,
+                    value: formatNumber(invoice.credits, locale),
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="font-semibold whitespace-nowrap">
+                  {formatSarExact(invoice.total_halalas, locale)}
+                </span>
+                <a
+                  href={api.invoices.pdfUrl(invoice.id)}
+                  className="font-medium text-emerald-700 underline-offset-2 hover:underline"
+                >
+                  {t("download")}
+                </a>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

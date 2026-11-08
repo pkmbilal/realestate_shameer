@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>{{ invoice.number }}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Noto Naskh Arabic", "Noto Sans", "DejaVu Sans", sans-serif; font-size: 11pt;
+         color: #0f172a; }
+  h1 { font-size: 18pt; margin: 0; }
+  .en { direction: ltr; color: #475569; font-size: 9.5pt; }
+  .head { display: flex; justify-content: space-between; align-items: flex-start;
+          border-bottom: 2px solid #059669; padding-bottom: 10px; margin-bottom: 14px; }
+  .qr img { width: 32mm; height: 32mm; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: start; vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 700; }
+  .num { direction: ltr; text-align: end; white-space: nowrap; }
+  .meta td { border: 0; padding: 2px 0; }
+  .total td { font-weight: 700; background: #ecfdf5; }
+  .foot { margin-top: 18px; font-size: 9pt; color: #64748b; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div>
+      <h1>فاتورة ضريبية مبسطة</h1>
+      <div class="en">Simplified Tax Invoice</div>
+    </div>
+    {% if qr %}<div class="qr"><img src="{{ qr }}" alt="ZATCA QR"></div>{% endif %}
+  </div>
+
+  <table class="meta">
+    <tr><td>رقم الفاتورة <span class="en">Invoice No</span></td><td class="num">{{ invoice.number }}</td></tr>
+    <tr><td>تاريخ الإصدار <span class="en">Issue date</span></td><td class="num">{{ issued|date:"Y-m-d H:i" }}</td></tr>
+    <tr><td>المعرّف <span class="en">UUID</span></td><td class="num">{{ invoice.uuid }}</td></tr>
+  </table>
+
+  <table>
+    <tr>
+      <th>البائع <span class="en">Seller</span></th>
+      <th>المشتري <span class="en">Buyer</span></th>
+    </tr>
+    <tr>
+      <td>
+        {{ invoice.seller_name_ar }}<br><span class="en">{{ invoice.seller_name_en }}</span><br>
+        الرقم الضريبي <span class="en">VAT No</span> <span class="num">{{ invoice.seller_vat_number }}</span><br>
+        {% if invoice.seller_cr_number %}السجل التجاري <span class="en">CR</span> <span class="num">{{ invoice.seller_cr_number }}</span><br>{% endif %}
+        <span class="en">{{ invoice.seller_address }}</span>
+      </td>
+      <td>{{ invoice.buyer_name|default:"—" }}</td>
+    </tr>
+  </table>
+
+  <table>
+    <tr>
+      <th>الوصف <span class="en">Description</span></th>
+      <th>الكمية <span class="en">Qty</span></th>
+      <th>المبلغ قبل الضريبة <span class="en">Amount before VAT</span></th>
+      <th>الضريبة {{ vat_percent }}% <span class="en">VAT</span></th>
+      <th>الإجمالي <span class="en">Total</span></th>
+    </tr>
+    <tr>
+      <td>{{ invoice.description_ar }}<br><span class="en">{{ invoice.description_en }}</span></td>
+      <td class="num">1</td>
+      <td class="num">{{ subtotal }}</td>
+      <td class="num">{{ vat }}</td>
+      <td class="num">{{ total }}</td>
+    </tr>
+  </table>
+
+  <table>
+    <tr><td>الإجمالي قبل الضريبة <span class="en">Total before VAT</span></td><td class="num">SAR {{ subtotal }}</td></tr>
+    <tr><td>ضريبة القيمة المضافة {{ vat_percent }}% <span class="en">VAT</span></td><td class="num">SAR {{ vat }}</td></tr>
+    <tr class="total"><td>الإجمالي شامل الضريبة <span class="en">Total with VAT</span></td><td class="num">SAR {{ total }}</td></tr>
+  </table>
+
+  <p class="foot">
+    الأسعار بالريال السعودي. <span class="en">Amounts in Saudi riyals</span>
+  </p>
+</body>
+</html>

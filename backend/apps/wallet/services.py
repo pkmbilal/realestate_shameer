@@ -126,6 +126,13 @@ def grant(wallet: Wallet, credits: int, by: User, note: str) -> CreditTransactio
     return _add_entry(wallet, credits, Kind.GRANT, note=_require_note(note), by=by)
 
 
+def top_up(wallet: Wallet, credits: int, *, note: str = "", by: User | None = None):
+    """Credits bought with money. Called only by apps.payments once the gateway confirms."""
+    if not isinstance(credits, int) or isinstance(credits, bool) or credits <= 0:
+        raise WalletError("invalid_amount")
+    return _add_entry(wallet, credits, Kind.TOPUP, note=note, by=by)
+
+
 def adjust(wallet: Wallet, amount: int, by: User, note: str) -> CreditTransaction:
     """A staff correction (positive or negative). The note explains why."""
     return _add_entry(wallet, amount, Kind.ADJUSTMENT, note=_require_note(note), by=by)
