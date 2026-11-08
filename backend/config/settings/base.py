@@ -136,6 +136,24 @@ WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
 WHATSAPP_ACCESS_TOKEN = env("WHATSAPP_ACCESS_TOKEN", default="")
 WHATSAPP_LEAD_TEMPLATE = env("WHATSAPP_LEAD_TEMPLATE", default="new_lead")
 
+# Credit top-ups (see apps/payments/). The public address of this API, used for the mock
+# checkout page that the browser opens in INTEGRATIONS_MODE=mock.
+API_PUBLIC_URL = env("API_PUBLIC_URL", default="http://localhost:8000").rstrip("/")
+# Moyasar. Only used when INTEGRATIONS_MODE=live, except the webhook secret (checked in both).
+MOYASAR_SECRET_KEY = env("MOYASAR_SECRET_KEY", default="")
+MOYASAR_WEBHOOK_SECRET = env("MOYASAR_WEBHOOK_SECRET", default="local-dev-webhook-secret")
+# Unpaid checkouts are marked expired after this many minutes.
+PAYMENT_PENDING_TTL_MINUTES = env.int("PAYMENT_PENDING_TTL_MINUTES", default=60)
+
+# ZATCA e-invoices (see apps/invoicing/). Seller details printed on every invoice.
+SELLER_NAME_AR = env("SELLER_NAME_AR", default="PORTAL_NAME")
+SELLER_NAME_EN = env("SELLER_NAME_EN", default="PORTAL_NAME")
+SELLER_VAT_NUMBER = env("SELLER_VAT_NUMBER", default="300000000000003")
+SELLER_CR_NUMBER = env("SELLER_CR_NUMBER", default="")
+SELLER_ADDRESS = env("SELLER_ADDRESS", default="Dammam, Saudi Arabia")
+# VAT rate in basis points: 1500 = 15%. Package prices include VAT.
+VAT_RATE_BP = env.int("VAT_RATE_BP", default=1500)
+
 # JWTs travel in httpOnly cookies (see apps/accounts/cookies.py).
 AUTH_COOKIE_ACCESS = "access_token"
 AUTH_COOKIE_REFRESH = "refresh_token"
@@ -207,6 +225,7 @@ REST_FRAMEWORK = {
         "nafath_start": "10/hour",
         "nafath_status": "300/hour",
         "lead_create": "30/hour",
+        "topup_start": "30/hour",
     },
 }
 
@@ -230,6 +249,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.listings.tasks.expire_listings",
         "schedule": crontab(hour=23, minute=0),
     },
+    # Every 15 minutes: settle or expire top-ups the buyer abandoned at the checkout page.
+    "expire-stale-payments": {
+        "task": "apps.payments.tasks.expire_stale_payments",
+        "schedule": crontab(minute="*/15"),
+    },
 }
 
 # --- Logging -------------------------------------------------------------------
@@ -240,4 +264,9 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "INFO"},
+    # WeasyPrint's font tools print hundreds of lines per invoice PDF at INFO.
+    "loggers": {
+        "fontTools": {"level": "WARNING"},
+        "weasyprint": {"level": "WARNING"},
+    },
 }

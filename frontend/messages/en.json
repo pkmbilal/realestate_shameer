@@ -382,7 +382,7 @@
       "too_many_photos": "You've reached the photo limit for this listing.",
       "photo_not_uploaded": "A photo didn't finish uploading. Please try again.",
       "upload_failed": "A photo didn't upload. Check your connection and try again.",
-      "insufficient_credits": "You don't have enough credits for this. Ask us to top up your wallet.",
+      "insufficient_credits": "You don't have enough credits for this. Top up your wallet and try again.",
       "not_active": "Only live listings can be refreshed or featured.",
       "paid_actions_unavailable": "Refresh and feature are for broker and agency listings.",
       "feature_unavailable": "Featuring isn't available right now."
@@ -397,7 +397,6 @@
       "balance": "Balance",
       "credits": "{count, plural, one {{value} credit} other {{value} credits}}",
       "topUp": "Top up",
-      "topUpSoon": "Online top-up with mada, Apple Pay and STC Pay is coming soon.",
       "noWallet": "Owner listings are free, so you don't need credits.",
       "pricesTitle": "Prices",
       "free": "Free",
@@ -427,6 +426,41 @@
         "post": "Post",
         "refresh": "Refresh",
         "feature": "Feature"
+      },
+      "invoicesTitle": "Invoices",
+      "invoicesEmpty": "No invoices yet. You get a tax invoice for every top-up.",
+      "download": "Download PDF"
+    },
+    "TopUp": {
+      "title": "Top up credits",
+      "intro": "Choose a package. You pay securely with mada, Apple Pay or STC Pay.",
+      "backToWallet": "Back to wallet",
+      "vatIncluded": "VAT included",
+      "buy": "Buy",
+      "redirecting": "Opening the payment page…",
+      "noPackages": "No packages are on sale right now. Please try again later.",
+      "loadError": "Couldn't load the packages. Please refresh the page.",
+      "errors": {
+        "no_wallet": "Owner listings are free, so you don't need credits.",
+        "package_not_found": "This package is no longer on sale. Please choose another.",
+        "gateway_unavailable": "The payment service isn't responding. Please try again in a few minutes.",
+        "throttled": "Too many attempts. Please wait a while and try again.",
+        "generic": "Something went wrong. Please try again."
+      },
+      "Result": {
+        "title": "Payment",
+        "checking": "Checking your payment…",
+        "paidTitle": "Payment received",
+        "paidBody": "{credits} credits were added to your wallet. Your balance is now {balance}.",
+        "invoiceReady": "Download your tax invoice",
+        "invoicePending": "Your tax invoice is being issued. It will appear in your wallet shortly.",
+        "failedTitle": "Payment not completed",
+        "failedBody": "No money was taken and no credits were added.",
+        "pendingTitle": "Waiting for the payment",
+        "pendingBody": "We haven't received confirmation yet. If you paid, your credits will appear in a few minutes.",
+        "notFound": "We couldn't find this payment.",
+        "tryAgain": "Try again",
+        "toWallet": "Go to wallet"
       }
     }
   }
