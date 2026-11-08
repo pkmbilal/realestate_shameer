@@ -283,7 +283,11 @@
       "view": "View",
       "archive": "Archive",
       "confirmArchive": "Yes, archive",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "refresh": "Refresh",
+      "feature": "Feature",
+      "confirmRefresh": "Refresh for {credits, plural, =0 {free} one {# credit} other {# credits}}",
+      "confirmFeature": "Feature {days} days for {credits, plural, =0 {free} one {# credit} other {# credits}}"
     },
     "gate": {
       "error": "Something went wrong. Please refresh the page.",
@@ -377,7 +381,53 @@
       "photo_too_large": "That photo is too large (10 MB max).",
       "too_many_photos": "You've reached the photo limit for this listing.",
       "photo_not_uploaded": "A photo didn't finish uploading. Please try again.",
-      "upload_failed": "A photo didn't upload. Check your connection and try again."
+      "upload_failed": "A photo didn't upload. Check your connection and try again.",
+      "insufficient_credits": "You don't have enough credits for this. Ask us to top up your wallet.",
+      "not_active": "Only live listings can be refreshed or featured.",
+      "paid_actions_unavailable": "Refresh and feature are for broker and agency listings.",
+      "feature_unavailable": "Featuring isn't available right now."
+    },
+    "wallet": "Wallet",
+    "featuredUntil": "Featured until",
+    "submitCost": "Submitting costs {credits, plural, one {# credit} other {# credits}}, refunded if it isn't approved.",
+    "balanceBar": "Credits: {balance}",
+    "Wallet": {
+      "title": "Wallet",
+      "intro": "Credits pay for posting, refreshing and featuring your listings.",
+      "balance": "Balance",
+      "credits": "{count, plural, one {{value} credit} other {{value} credits}}",
+      "topUp": "Top up",
+      "topUpSoon": "Online top-up with mada, Apple Pay and STC Pay is coming soon.",
+      "noWallet": "Owner listings are free, so you don't need credits.",
+      "pricesTitle": "Prices",
+      "free": "Free",
+      "price": {
+        "post": "Post a listing ({days} days)",
+        "refresh": "Refresh a listing (back to the top)",
+        "feature": "Feature a listing ({days} days)"
+      },
+      "historyTitle": "History",
+      "historyEmpty": "No credit activity yet.",
+      "loadError": "Couldn't load your wallet. Please refresh the page.",
+      "loadMore": "Show more",
+      "columns": {
+        "date": "Date",
+        "entry": "Entry",
+        "amount": "Credits",
+        "balance": "Balance"
+      },
+      "kind": {
+        "grant": "Free credits",
+        "topup": "Top-up",
+        "spend": "Spent",
+        "refund": "Refund",
+        "adjustment": "Correction"
+      },
+      "action": {
+        "post": "Post",
+        "refresh": "Refresh",
+        "feature": "Feature"
+      }
     }
   }
 }

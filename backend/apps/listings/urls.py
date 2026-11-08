@@ -30,6 +30,8 @@ urlpatterns = [
     path(mine, views.MyListingDetailView.as_view(), name="my-listing"),
     path(f"{mine}submit/", views.SubmitListingView.as_view(), name="my-listing-submit"),
     path(f"{mine}archive/", views.ArchiveListingView.as_view(), name="my-listing-archive"),
+    path(f"{mine}refresh/", views.RefreshListingView.as_view(), name="my-listing-refresh"),
+    path(f"{mine}feature/", views.FeatureListingView.as_view(), name="my-listing-feature"),
     path(
         f"{mine}photos/presign/", views.PresignPhotoView.as_view(), name="my-listing-photo-presign"
     ),

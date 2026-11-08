@@ -36,6 +36,12 @@ export default async function DashboardPage({ params }: Props) {
             {t("profile")}
           </Link>
           <Link
+            href="/dashboard/wallet"
+            className="rounded-lg border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50"
+          >
+            {t("wallet")}
+          </Link>
+          <Link
             href="/dashboard/listings/new"
             className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
           >

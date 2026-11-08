@@ -283,7 +283,11 @@
       "view": "عرض",
       "archive": "أرشفة",
       "confirmArchive": "نعم، أرشفة",
-      "cancel": "إلغاء"
+      "cancel": "إلغاء",
+      "refresh": "تحديث",
+      "feature": "تمييز",
+      "confirmRefresh": "تحديث مقابل {credits, plural, =0 {مجانًا} one {رصيد واحد} two {رصيدين} few {# أرصدة} many {# رصيدًا} other {# رصيد}}",
+      "confirmFeature": "تمييز {days} أيام مقابل {credits, plural, =0 {مجانًا} one {رصيد واحد} two {رصيدين} few {# أرصدة} many {# رصيدًا} other {# رصيد}}"
     },
     "gate": {
       "error": "حدث خطأ. يُرجى تحديث الصفحة.",
@@ -377,7 +381,53 @@
       "photo_too_large": "حجم الصورة كبير جدًا (الحد الأقصى 10 ميجابايت).",
       "too_many_photos": "وصلت إلى الحد الأقصى لعدد الصور في هذا الإعلان.",
       "photo_not_uploaded": "لم يكتمل رفع إحدى الصور. يُرجى المحاولة مرة أخرى.",
-      "upload_failed": "تعذّر رفع إحدى الصور. تحقق من اتصالك وحاول مرة أخرى."
+      "upload_failed": "تعذّر رفع إحدى الصور. تحقق من اتصالك وحاول مرة أخرى.",
+      "insufficient_credits": "رصيدك لا يكفي لهذه العملية. تواصل معنا لشحن محفظتك.",
+      "not_active": "يمكن تحديث أو تمييز الإعلانات المنشورة فقط.",
+      "paid_actions_unavailable": "التحديث والتمييز متاحان لإعلانات الوسطاء والمكاتب فقط.",
+      "feature_unavailable": "التمييز غير متاح حاليًا."
+    },
+    "wallet": "المحفظة",
+    "featuredUntil": "مميز حتى",
+    "submitCost": "الإرسال يكلف {credits, plural, one {رصيدًا واحدًا} two {رصيدين} few {# أرصدة} many {# رصيدًا} other {# رصيد}}، ويُعاد إذا لم تتم الموافقة.",
+    "balanceBar": "الرصيد: {balance}",
+    "Wallet": {
+      "title": "المحفظة",
+      "intro": "تُستخدم الأرصدة لنشر إعلاناتك وتحديثها وتمييزها.",
+      "balance": "الرصيد",
+      "credits": "{count, plural, zero {لا رصيد} one {رصيد واحد} two {رصيدان} few {{value} أرصدة} many {{value} رصيدًا} other {{value} رصيد}}",
+      "topUp": "شحن الرصيد",
+      "topUpSoon": "الشحن الإلكتروني عبر مدى وApple Pay وSTC Pay قريبًا.",
+      "noWallet": "إعلانات الملاك مجانية، فلا تحتاج إلى رصيد.",
+      "pricesTitle": "الأسعار",
+      "free": "مجانًا",
+      "price": {
+        "post": "نشر إعلان ({days} يومًا)",
+        "refresh": "تحديث إعلان (يعود إلى الأعلى)",
+        "feature": "تمييز إعلان ({days} أيام)"
+      },
+      "historyTitle": "السجل",
+      "historyEmpty": "لا توجد حركات على رصيدك بعد.",
+      "loadError": "تعذر تحميل المحفظة. يرجى تحديث الصفحة.",
+      "loadMore": "عرض المزيد",
+      "columns": {
+        "date": "التاريخ",
+        "entry": "الحركة",
+        "amount": "القيمة",
+        "balance": "الرصيد بعدها"
+      },
+      "kind": {
+        "grant": "رصيد مجاني",
+        "topup": "شحن",
+        "spend": "خصم",
+        "refund": "استرداد",
+        "adjustment": "تصحيح"
+      },
+      "action": {
+        "post": "نشر",
+        "refresh": "تحديث",
+        "feature": "تمييز"
+      }
     }
   }
 }

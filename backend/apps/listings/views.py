@@ -30,8 +30,11 @@ def _error(exc: services.ListingError):
     body = {"code": exc.code}
     if exc.fields:
         body["fields"] = exc.fields
-    code = status.HTTP_403_FORBIDDEN if exc.code == "nafath_required" else 400
-    return Response(body, status=code)
+    codes = {
+        "nafath_required": status.HTTP_403_FORBIDDEN,
+        "insufficient_credits": status.HTTP_402_PAYMENT_REQUIRED,
+    }
+    return Response(body, status=codes.get(exc.code, status.HTTP_400_BAD_REQUEST))
 
 
 def _my_listings(user):
@@ -109,6 +112,30 @@ class ArchiveListingView(AdvertiserView):
         listing = self.get_listing(reference)
         try:
             services.archive(listing, request.user)
+        except services.ListingError as exc:
+            return _error(exc)
+        return self.listing_response(listing)
+
+
+class RefreshListingView(AdvertiserView):
+    """POST: spend credits to move a live listing back to the top of "newest"."""
+
+    def post(self, request, reference):
+        listing = self.get_listing(reference)
+        try:
+            services.refresh_listing(listing, request.user)
+        except services.ListingError as exc:
+            return _error(exc)
+        return self.listing_response(listing)
+
+
+class FeatureListingView(AdvertiserView):
+    """POST: spend credits to pin a live listing on top of search for a few days."""
+
+    def post(self, request, reference):
+        listing = self.get_listing(reference)
+        try:
+            services.feature_listing(listing, request.user)
         except services.ListingError as exc:
             return _error(exc)
         return self.listing_response(listing)

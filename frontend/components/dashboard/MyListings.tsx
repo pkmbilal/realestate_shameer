@@ -7,8 +7,15 @@ import { useEffect, useState } from "react";
 import { useListingTitle } from "@/components/listings/title";
 import PriceTag from "@/components/listings/PriceTag";
 import { Link } from "@/i18n/navigation";
-import { api, EDITABLE_STATUSES, type MyListing } from "@/lib/api/client";
-import { formatDate } from "@/lib/format";
+import {
+  api,
+  type CreditPrice,
+  EDITABLE_STATUSES,
+  type MyListing,
+  type WalletAction,
+  type WalletSummary,
+} from "@/lib/api/client";
+import { formatDate, formatNumber } from "@/lib/format";
 
 import { type DashboardErrorKey, dashboardErrorKey } from "./errors";
 import StatusChip from "./StatusChip";
@@ -18,16 +25,27 @@ export default function MyListings() {
   const t = useTranslations("Dashboard");
   // undefined = loading, null = failed.
   const [listings, setListings] = useState<MyListing[] | null | undefined>(undefined);
+  // The wallet is optional here: if it fails to load, the paid buttons just stay hidden.
+  const [wallet, setWallet] = useState<WalletSummary | null>(null);
+
+  function loadWallet() {
+    api.wallet
+      .get()
+      .then(setWallet)
+      .catch(() => setWallet(null));
+  }
 
   useEffect(() => {
     api.myListings
       .list()
       .then(setListings)
       .catch(() => setListings(null));
+    loadWallet();
   }, []);
 
   function replace(updated: MyListing) {
     setListings((all) => all?.map((l) => (l.reference === updated.reference ? updated : l)));
+    loadWallet(); // the action may have spent or refunded credits
   }
 
   if (listings === undefined) return <div className="h-40" aria-busy />;
@@ -49,21 +67,50 @@ export default function MyListings() {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
-      {listings.map((listing) => (
-        <li key={listing.reference}>
-          <MyListingRow listing={listing} onChange={replace} />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-3">
+      {wallet?.has_wallet && <BalanceBar balance={wallet.balance} />}
+      <ul className="flex flex-col gap-3">
+        {listings.map((listing) => (
+          <li key={listing.reference}>
+            <MyListingRow
+              listing={listing}
+              prices={wallet?.has_wallet ? wallet.prices : null}
+              onChange={replace}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
+}
+
+function BalanceBar({ balance }: { balance: number }) {
+  const t = useTranslations("Dashboard");
+  const locale = useLocale();
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-900">
+      <span className="font-medium">
+        {t("balanceBar", { balance: formatNumber(balance, locale) })}
+      </span>
+      <Link href="/dashboard/wallet" className="font-medium underline underline-offset-2">
+        {t("wallet")}
+      </Link>
+    </div>
+  );
+}
+
+function priceOf(prices: CreditPrice[] | null, action: WalletAction): CreditPrice | undefined {
+  return prices?.find((p) => p.action === action);
 }
 
 function MyListingRow({
   listing,
+  prices,
   onChange,
 }: {
   listing: MyListing;
+  /** Current credit prices, or null when this advertiser has no wallet (owners). */
+  prices: CreditPrice[] | null;
   onChange: (listing: MyListing) => void;
 }) {
   const t = useTranslations("Dashboard");
@@ -71,12 +118,23 @@ function MyListingRow({
   const title = useListingTitle(listing);
   const [busy, setBusy] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [confirmPaid, setConfirmPaid] = useState<"refresh" | "feature" | null>(null);
   const [error, setError] = useState<DashboardErrorKey | null>(null);
 
   const editable = EDITABLE_STATUSES.includes(listing.status);
   const canSubmit = listing.status === "draft" && listing.missing_fields.length === 0;
   const canArchive = editable || listing.status === "expired";
   const cover = listing.photos[0];
+  const featuredUntil =
+    listing.status === "active" &&
+    listing.featured_until &&
+    new Date(listing.featured_until) > new Date()
+      ? listing.featured_until
+      : null;
+  const postPrice = priceOf(prices, "post");
+  const refreshPrice = priceOf(prices, "refresh");
+  const featurePrice = priceOf(prices, "feature");
+  const canPromote = listing.status === "active" && prices !== null;
 
   async function run(action: (reference: string) => Promise<MyListing>) {
     setBusy(true);
@@ -88,6 +146,7 @@ function MyListingRow({
     } finally {
       setBusy(false);
       setConfirmArchive(false);
+      setConfirmPaid(null);
     }
   }
 
@@ -116,6 +175,11 @@ function MyListingRow({
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <StatusChip status={listing.status} />
+          {featuredUntil && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+              {t("featuredUntil")} {formatDate(featuredUntil, locale)}
+            </span>
+          )}
           <span className="text-xs text-slate-500" dir="ltr">
             {listing.reference}
           </span>
@@ -151,6 +215,11 @@ function MyListingRow({
         {listing.status === "draft" && listing.missing_fields.length > 0 && (
           <p className="text-sm text-slate-500">{t("incompleteHint")}</p>
         )}
+        {canSubmit && postPrice && postPrice.credits > 0 && (
+          <p className="text-sm text-slate-500">
+            {t("submitCost", { credits: postPrice.credits })}
+          </p>
+        )}
         {error && (
           <p role="alert" className="text-sm text-red-700">
             {t(`errors.${error}`)}
@@ -181,7 +250,54 @@ function MyListingRow({
               {t("actions.view")}
             </Link>
           )}
+          {canPromote &&
+            (confirmPaid ? (
+              <>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className={`${button} border-emerald-600 text-emerald-800 hover:bg-emerald-50`}
+                  onClick={() =>
+                    run(confirmPaid === "refresh" ? api.myListings.refresh : api.myListings.feature)
+                  }
+                >
+                  {confirmPaid === "refresh"
+                    ? t("actions.confirmRefresh", { credits: refreshPrice?.credits ?? 0 })
+                    : t("actions.confirmFeature", {
+                        credits: featurePrice?.credits ?? 0,
+                        days: featurePrice?.days ?? 0,
+                      })}
+                </button>
+                <button type="button" className={button} onClick={() => setConfirmPaid(null)}>
+                  {t("actions.cancel")}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={button}
+                  onClick={() => {
+                    setConfirmArchive(false);
+                    setConfirmPaid("refresh");
+                  }}
+                >
+                  {t("actions.refresh")}
+                </button>
+                <button
+                  type="button"
+                  className={button}
+                  onClick={() => {
+                    setConfirmArchive(false);
+                    setConfirmPaid("feature");
+                  }}
+                >
+                  {t("actions.feature")}
+                </button>
+              </>
+            ))}
           {canArchive &&
+            !confirmPaid &&
             (confirmArchive ? (
               <>
                 <button

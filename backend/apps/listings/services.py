@@ -21,6 +21,8 @@ from apps.brokers.models import Agency, BrokerProfile
 from apps.core.dates import riyadh_today
 from apps.core.storage import bucket_name, s3_client
 from apps.locations.models import City, District
+from apps.wallet import services as wallet_services
+from apps.wallet.models import CreditTransaction
 from integrations.rega import RegaAdLicence, RegaError, get_rega_client
 
 from .models import Favourite, Listing, ListingPhoto, ListingStatusChange
@@ -205,41 +207,133 @@ def _require_valid_licence(listing: Listing) -> None:
         raise ListingError("licence_expired")
 
 
+# --- Credits (brokers and agencies pay; owner listings are free) ----------------------
+
+
+def _post_period_active(listing: Listing) -> bool:
+    return listing.post_expires_at is not None and listing.post_expires_at > timezone.now()
+
+
+def _charge(listing: Listing, action: str, by: User | None):
+    """Take the credits for `action` from the listing's wallet (none for owners)."""
+    wallet = wallet_services.wallet_for_listing(listing)
+    if wallet is None:
+        return None
+    try:
+        return wallet_services.charge(wallet, action, listing=listing, by=by)
+    except wallet_services.WalletError as exc:
+        raise ListingError(exc.code) from None
+
+
+def _unused_post_charges(listing: Listing):
+    """Post charges paid since the listing last went live: paid for, but not yet used."""
+    charges = CreditTransaction.objects.filter(
+        listing=listing,
+        kind=CreditTransaction.Kind.SPEND,
+        action=CreditTransaction.Action.POST,
+        reversed_by__isnull=True,
+    )
+    last_live = ListingStatusChange.objects.filter(
+        listing=listing, to_status=Status.ACTIVE
+    ).aggregate(at=Max("created_at"))["at"]
+    if last_live is not None:
+        charges = charges.filter(created_at__gt=last_live)
+    return charges
+
+
+def _refund_unused_post_charge(listing: Listing, by: User | None) -> None:
+    """A submission that ends without going live (rejected, withdrawn, expired) gets its
+    post credits back. Safe to call more than once."""
+    for entry in _unused_post_charges(listing):
+        try:
+            # No note: the row already shows "refund · post" and the listing reference.
+            wallet_services.refund(entry, by=by)
+        except wallet_services.WalletError:
+            continue  # Already refunded by another request.
+
+
 def submit_for_review(listing: Listing, by: User) -> Listing:
+    """Send a draft to moderation. Takes the post credits unless a post period is still
+    running (e.g. a live listing that was edited); they are refunded if it is rejected."""
     missing = missing_fields(listing)
     if missing:
         raise ListingError("incomplete", missing)
     _require_valid_licence(listing)
-    return _transition(
-        listing,
-        Status.PENDING_REVIEW,
-        allowed_from={Status.DRAFT},
-        by=by,
-        moderation_note="",
-    )
+    with transaction.atomic():
+        listing = _transition(
+            listing,
+            Status.PENDING_REVIEW,
+            allowed_from={Status.DRAFT},
+            by=by,
+            moderation_note="",
+        )
+        if not _post_period_active(listing) and not _unused_post_charges(listing).exists():
+            _charge(listing, CreditTransaction.Action.POST, by)
+    return listing
 
 
 def approve(listing: Listing, by: User) -> Listing:
     """Publish a reviewed listing for LISTING_POST_DAYS days.
 
-    Re-approving after an edit keeps the original post period.
+    Re-approving after an edit keeps the original post period. If that period ran out while
+    the listing waited for review, a new one starts and is charged now.
     """
     _require_valid_licence(listing)
     now = timezone.now()
     post_expires_at = listing.post_expires_at
-    if post_expires_at is None or post_expires_at <= now:
-        post_expires_at = now + timedelta(days=settings.LISTING_POST_DAYS)
-        # WALLET: the "post" credit charge goes here once the wallet app exists
-        # (brokers and agencies only; owner listings are free).
-    return _transition(
-        listing,
-        Status.ACTIVE,
-        allowed_from={Status.PENDING_REVIEW},
-        by=by,
-        published_at=listing.published_at or now,
-        refreshed_at=listing.refreshed_at or now,
-        post_expires_at=post_expires_at,
-    )
+    with transaction.atomic():
+        if post_expires_at is None or post_expires_at <= now:
+            post_expires_at = now + timedelta(days=settings.LISTING_POST_DAYS)
+            if not _unused_post_charges(listing).exists():
+                _charge(listing, CreditTransaction.Action.POST, by)
+        return _transition(
+            listing,
+            Status.ACTIVE,
+            allowed_from={Status.PENDING_REVIEW},
+            by=by,
+            published_at=listing.published_at or now,
+            refreshed_at=listing.refreshed_at or now,
+            post_expires_at=post_expires_at,
+        )
+
+
+def _paid_action(listing: Listing, by: User, action: str, apply) -> Listing:
+    """Charge `action` on a live listing and apply its effect, all or nothing."""
+    if wallet_services.wallet_for_listing(listing) is None:
+        raise ListingError("paid_actions_unavailable")
+    with transaction.atomic():
+        locked = Listing.objects.select_for_update().get(pk=listing.pk)
+        if locked.status != Status.ACTIVE:
+            raise ListingError("not_active")
+        apply(locked)
+        locked.save()
+        _charge(locked, action, by)
+    listing.refresh_from_db()
+    return listing
+
+
+def refresh_listing(listing: Listing, by: User) -> Listing:
+    """Move a live listing back to the top of "newest"."""
+
+    def apply(locked):
+        locked.refreshed_at = timezone.now()
+
+    return _paid_action(listing, by, CreditTransaction.Action.REFRESH, apply)
+
+
+def feature_listing(listing: Listing, by: User) -> Listing:
+    """Pin a live listing on top of search for the configured number of days. Buying again
+    while it is featured adds the days on to the end."""
+    days = wallet_services.price_for(CreditTransaction.Action.FEATURE).days
+    if days <= 0:
+        raise ListingError("feature_unavailable")
+
+    def apply(locked):
+        now = timezone.now()
+        start = max(now, locked.featured_until or now)
+        locked.featured_until = start + timedelta(days=days)
+
+    return _paid_action(listing, by, CreditTransaction.Action.FEATURE, apply)
 
 
 def _require_reason(reason: str) -> str:
@@ -252,14 +346,17 @@ def _require_reason(reason: str) -> str:
 def reject(listing: Listing, by: User, reason: str) -> Listing:
     """Send a listing back to the advertiser with the reason shown to them."""
     reason = _require_reason(reason)
-    return _transition(
-        listing,
-        Status.DRAFT,
-        allowed_from={Status.PENDING_REVIEW},
-        by=by,
-        reason=reason,
-        moderation_note=reason[:500],
-    )
+    with transaction.atomic():
+        listing = _transition(
+            listing,
+            Status.DRAFT,
+            allowed_from={Status.PENDING_REVIEW},
+            by=by,
+            reason=reason,
+            moderation_note=reason[:500],
+        )
+        _refund_unused_post_charge(listing, by)
+    return listing
 
 
 def take_down(listing: Listing, by: User, reason: str) -> Listing:
@@ -276,13 +373,17 @@ def take_down(listing: Listing, by: User, reason: str) -> Listing:
 
 
 def archive(listing: Listing, by: User) -> Listing:
-    """The advertiser removes their own listing (sold, rented, or no longer offered)."""
-    return _transition(
-        listing,
-        Status.ARCHIVED,
-        allowed_from={*Listing.LIVE_STATUSES, Status.EXPIRED},
-        by=by,
-    )
+    """The advertiser removes their own listing (sold, rented, or no longer offered).
+    Withdrawing it before it was ever published refunds the post credits."""
+    with transaction.atomic():
+        listing = _transition(
+            listing,
+            Status.ARCHIVED,
+            allowed_from={*Listing.LIVE_STATUSES, Status.EXPIRED},
+            by=by,
+        )
+        _refund_unused_post_charge(listing, by)
+    return listing
 
 
 def expire_due_listings() -> int:
@@ -309,13 +410,16 @@ def expire_due_listings() -> int:
     expired = 0
     for pk, reason in due:
         try:
-            _transition(
-                Listing(pk=pk),
-                Status.EXPIRED,
-                allowed_from={Status.ACTIVE, Status.PENDING_REVIEW},
-                by=None,
-                reason=reason,
-            )
+            with transaction.atomic():
+                listing = _transition(
+                    Listing(pk=pk),
+                    Status.EXPIRED,
+                    allowed_from={Status.ACTIVE, Status.PENDING_REVIEW},
+                    by=None,
+                    reason=reason,
+                )
+                # A licence that expires while waiting for review never went live.
+                _refund_unused_post_charge(listing, None)
         except ListingError:
             continue  # Its status changed in the meantime; nothing to do.
         expired += 1
