@@ -14,6 +14,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.models import IntegrationError
+from apps.core.services import record_integration_error
 from apps.wallet import services as wallet_services
 from integrations.payments import GatewayStatus, get_payments_client
 
@@ -70,8 +72,14 @@ def start_top_up(user: User, package_id, locale: str = "ar") -> tuple[Payment, s
             return_url=return_url(payment, locale),
             metadata={"payment_id": payment.pk},
         )
-    except Exception:
+    except Exception as exc:
         logger.exception("payment %s: could not start checkout", payment.pk)
+        record_integration_error(
+            IntegrationError.Integration.PAYMENTS,
+            "create_checkout",
+            exc,
+            reference=f"payment:{payment.pk}",
+        )
         payment.status = Status.FAILED
         payment.save(update_fields=["status", "updated_at"])
         raise PaymentError("gateway_unavailable") from None
@@ -104,8 +112,11 @@ def _confirm(payment: Payment) -> tuple[Payment, bool]:
     # Ask the gateway outside the lock: it is a slow network call.
     try:
         result = get_payments_client().fetch(payment.gateway_ref)
-    except Exception:
+    except Exception as exc:
         logger.exception("payment %s: could not reach the gateway", payment.pk)
+        record_integration_error(
+            IntegrationError.Integration.PAYMENTS, "fetch", exc, reference=f"payment:{payment.pk}"
+        )
         return payment, False
 
     with transaction.atomic():
@@ -122,6 +133,16 @@ def _confirm(payment: Payment) -> tuple[Payment, bool]:
                     locked.amount_halalas,
                     result.amount_halalas,
                     result.currency,
+                )
+                record_integration_error(
+                    IntegrationError.Integration.PAYMENTS,
+                    "amount_mismatch",
+                    message=(
+                        f"expected {locked.amount_halalas} SAR halalas, gateway said "
+                        f"{result.amount_halalas} {result.currency}"
+                    ),
+                    reference=f"payment:{locked.pk}",
+                    once=True,  # confirm runs again every 15 minutes; one open row is enough
                 )
                 return locked, True
             entry = wallet_services.top_up(

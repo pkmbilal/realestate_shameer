@@ -3,37 +3,59 @@ import urllib.request
 
 from django.conf import settings
 
-from .base import LeadNotification, WhatsAppClient
+from .base import ExpiryWarning, LeadNotification, WhatsAppClient
 
 GRAPH_URL = "https://graph.facebook.com/v21.0/{phone_number_id}/messages"
 
 
 class LiveWhatsAppClient(WhatsAppClient):
-    """WhatsApp Cloud API. Sends the approved lead template (settings.WHATSAPP_*).
+    """WhatsApp Cloud API. Sends approved message templates (settings.WHATSAPP_*).
 
-    The template takes four body parameters, in this order:
-    listing reference, contact channel, buyer name, buyer phone.
+    Lead template body parameters, in order: listing reference, contact channel,
+    buyer name, buyer phone.
+    Expiry template body parameters, in order: listing reference, expiry date (YYYY-MM-DD),
+    reason ("licence" or "post_period"), dashboard link.
     """
 
     def send_lead_notification(self, notification: LeadNotification) -> None:
+        self._send_template(
+            to=notification.to,
+            template=settings.WHATSAPP_LEAD_TEMPLATE,
+            locale=notification.locale,
+            params=[
+                notification.listing_reference,
+                notification.channel,
+                notification.buyer_name or "-",
+                notification.buyer_phone or "-",
+            ],
+        )
+
+    def send_expiry_warning(self, warning: ExpiryWarning) -> None:
+        self._send_template(
+            to=warning.to,
+            template=settings.WHATSAPP_EXPIRY_TEMPLATE,
+            locale=warning.locale,
+            params=[
+                warning.listing_reference,
+                warning.expires_on.isoformat(),
+                warning.reason,
+                warning.dashboard_url,
+            ],
+        )
+
+    def _send_template(self, *, to: str, template: str, locale: str, params: list[str]) -> None:
         if not (settings.WHATSAPP_PHONE_NUMBER_ID and settings.WHATSAPP_ACCESS_TOKEN):
             raise NotImplementedError(
                 "WhatsApp Cloud API is not configured. Set WHATSAPP_PHONE_NUMBER_ID and "
                 "WHATSAPP_ACCESS_TOKEN, or use INTEGRATIONS_MODE=mock."
             )
-        params = [
-            notification.listing_reference,
-            notification.channel,
-            notification.buyer_name or "-",
-            notification.buyer_phone or "-",
-        ]
         body = {
             "messaging_product": "whatsapp",
-            "to": notification.to.lstrip("+"),
+            "to": to.lstrip("+"),
             "type": "template",
             "template": {
-                "name": settings.WHATSAPP_LEAD_TEMPLATE,
-                "language": {"code": notification.locale},
+                "name": template,
+                "language": {"code": locale},
                 "components": [
                     {
                         "type": "body",

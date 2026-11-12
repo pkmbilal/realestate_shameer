@@ -2,6 +2,8 @@ import logging
 
 from celery import shared_task
 
+from apps.core.models import IntegrationError
+from apps.core.services import record_integration_error
 from apps.payments.models import Payment
 
 from . import services
@@ -20,6 +22,12 @@ def issue_invoice(self, payment_id: int) -> str:
     except Exception as exc:
         if self.request.retries >= self.max_retries:
             logger.error("payment %s: invoice could not be reported to ZATCA", payment_id)
+            record_integration_error(
+                IntegrationError.Integration.ZATCA,
+                "report_simplified",
+                exc,
+                reference=f"payment:{payment_id}",
+            )
             raise
         # Wait 1, 2, 4 … minutes between tries.
         raise self.retry(exc=exc, countdown=60 * 2**self.request.retries) from exc

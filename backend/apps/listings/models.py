@@ -156,6 +156,9 @@ class Listing(models.Model):
     # Sort key for "newest"; moved forward by the paid "refresh" action later.
     refreshed_at = models.DateTimeField(_("refreshed at"), null=True, blank=True)
     featured_until = models.DateTimeField(_("featured until"), null=True, blank=True)
+    # The expiry date the advertiser was last warned about (3 days ahead). A listing that is
+    # extended gets a new expiry date, so it is warned again before that one.
+    expiry_warned_for = models.DateField(_("expiry warning sent for"), null=True, blank=True)
     view_count = models.PositiveIntegerField(_("views"), default=0)
 
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
@@ -229,6 +232,62 @@ class ListingStatusChange(models.Model):
 
     def __str__(self):
         return f"{self.listing.reference}: {self.from_status} → {self.to_status}"
+
+
+class RegaSync(models.Model):
+    """Append-only log of every time we read a listing's licence from REGA. Never edited.
+
+    Outcomes:
+      ok        - REGA's data matches ours.
+      updated   - the expiry date changed at REGA (e.g. renewed); we copied the new date.
+      mismatch  - REGA now has a different purpose/type/place/area. Not copied: staff review.
+      expired   - REGA says the licence has expired; the nightly expiry job hides the listing.
+      not_found - REGA no longer has the licence (cancelled); the listing was expired.
+      error     - REGA did not answer; nothing changed. See the integration error log.
+    """
+
+    class Trigger(models.TextChoices):
+        CREATE = "create", _("Listing created")
+        NIGHTLY = "nightly", _("Nightly check")
+        MANUAL = "manual", _("Checked by staff")
+
+    class Outcome(models.TextChoices):
+        OK = "ok", _("OK")
+        UPDATED = "updated", _("Updated")
+        MISMATCH = "mismatch", _("Mismatch (review)")
+        EXPIRED = "expired", _("Expired")
+        NOT_FOUND = "not_found", _("Not found (cancelled)")
+        ERROR = "error", _("Error")
+
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.CASCADE,
+        related_name="rega_syncs",
+        verbose_name=_("listing"),
+    )
+    licence_number = models.CharField(_("REGA ad licence number"), max_length=32)
+    trigger = models.CharField(_("trigger"), max_length=10, choices=Trigger.choices)
+    outcome = models.CharField(_("outcome"), max_length=10, choices=Outcome.choices)
+    # {field: [ours, REGA's]} for anything that differed.
+    changes = models.JSONField(_("changes"), default=dict, blank=True)
+    error_code = models.CharField(_("error"), max_length=50, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("by"),
+    )
+    created_at = models.DateTimeField(_("at"), auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = _("REGA sync")
+        verbose_name_plural = _("REGA sync log")
+        ordering = ("-created_at", "-id")
+
+    def __str__(self):
+        return f"{self.licence_number}: {self.outcome}"
 
 
 class PendingListing(Listing):

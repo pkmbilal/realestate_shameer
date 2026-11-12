@@ -135,6 +135,9 @@ LEAD_HASH_SALT = env("LEAD_HASH_SALT", default="local-dev-lead-salt")
 WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
 WHATSAPP_ACCESS_TOKEN = env("WHATSAPP_ACCESS_TOKEN", default="")
 WHATSAPP_LEAD_TEMPLATE = env("WHATSAPP_LEAD_TEMPLATE", default="new_lead")
+WHATSAPP_EXPIRY_TEMPLATE = env("WHATSAPP_EXPIRY_TEMPLATE", default="listing_expiring")
+# Advertisers are warned on WhatsApp this many days before a listing comes down.
+LISTING_EXPIRY_WARNING_DAYS = env.int("LISTING_EXPIRY_WARNING_DAYS", default=3)
 
 # Credit top-ups (see apps/payments/). The public address of this API, used for the mock
 # checkout page that the browser opens in INTEGRATIONS_MODE=mock.
@@ -244,6 +247,17 @@ CELERY_TIMEZONE = "UTC"
 CELERY_TASK_ACKS_LATE = True
 # Scheduled jobs (nightly licence expiry etc.) are added here as features land.
 CELERY_BEAT_SCHEDULE = {
+    # 22:30 UTC = 01:30 Riyadh: re-check every live licence with REGA (renewed, cancelled…),
+    # just before the expiry job so it works on fresh dates.
+    "resync-rega-licences-nightly": {
+        "task": "apps.listings.tasks.resync_active_licences",
+        "schedule": crontab(hour=22, minute=30),
+    },
+    # 05:00 UTC = 08:00 Riyadh: WhatsApp advertisers whose listing comes down within 3 days.
+    "warn-expiring-listings-daily": {
+        "task": "apps.listings.tasks.warn_expiring_listings",
+        "schedule": crontab(hour=5, minute=0),
+    },
     # 23:00 UTC = 02:00 Riyadh: hide listings whose REGA licence or post period has ended.
     "expire-listings-nightly": {
         "task": "apps.listings.tasks.expire_listings",

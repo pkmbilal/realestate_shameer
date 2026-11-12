@@ -7,7 +7,8 @@ Every status change is written to ListingStatusChange inside a locked transactio
 import logging
 import re
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
+from zoneinfo import ZoneInfo
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
@@ -19,13 +20,17 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.brokers.models import Agency, BrokerProfile
 from apps.core.dates import riyadh_today
+from apps.core.models import IntegrationError
+from apps.core.services import record_integration_error
 from apps.core.storage import bucket_name, s3_client
+from apps.leads.services import contact_number
 from apps.locations.models import City, District
 from apps.wallet import services as wallet_services
 from apps.wallet.models import CreditTransaction
 from integrations.rega import RegaAdLicence, RegaError, get_rega_client
+from integrations.whatsapp import ExpiryWarning, get_whatsapp_client
 
-from .models import Favourite, Listing, ListingPhoto, ListingStatusChange
+from .models import Favourite, Listing, ListingPhoto, ListingStatusChange, RegaSync
 
 logger = logging.getLogger(__name__)
 Status = Listing.Status
@@ -93,6 +98,13 @@ def fetch_valid_licence(number: str) -> RegaAdLicence:
     try:
         licence = get_rega_client().fetch_ad_licence(number)
     except RegaError as exc:
+        if exc.code != "not_found":  # not_found is usually a typo, not an outage
+            record_integration_error(
+                IntegrationError.Integration.REGA,
+                "fetch_ad_licence",
+                exc,
+                reference=f"licence:{number}",
+            )
         raise ListingError(exc.code) from None
     if licence.expires_on < riyadh_today():
         raise ListingError("licence_expired")
@@ -131,7 +143,7 @@ def start_listing_from_licence(user: User, raw_number: str) -> Listing:
 
     try:
         with transaction.atomic():
-            return Listing.objects.create(
+            listing = Listing.objects.create(
                 created_by=user,
                 broker=broker,
                 agency=agency,
@@ -149,6 +161,14 @@ def start_listing_from_licence(user: User, raw_number: str) -> Listing:
                     Listing.RentPeriod.YEARLY if licence.purpose == Listing.Purpose.RENT else ""
                 ),
             )
+            RegaSync.objects.create(
+                listing=listing,
+                licence_number=number,
+                trigger=RegaSync.Trigger.CREATE,
+                outcome=RegaSync.Outcome.OK,
+                created_by=user,
+            )
+            return listing
     except IntegrityError:
         # Someone else started a listing with this licence at the same moment.
         raise ListingError("licence_in_use") from None
@@ -407,24 +427,213 @@ def expire_due_listings() -> int:
         .values_list("pk", flat=True)
     ]
 
-    expired = 0
-    for pk, reason in due:
-        try:
-            with transaction.atomic():
-                listing = _transition(
-                    Listing(pk=pk),
-                    Status.EXPIRED,
-                    allowed_from={Status.ACTIVE, Status.PENDING_REVIEW},
-                    by=None,
-                    reason=reason,
-                )
-                # A licence that expires while waiting for review never went live.
-                _refund_unused_post_charge(listing, None)
-        except ListingError:
-            continue  # Its status changed in the meantime; nothing to do.
-        expired += 1
+    expired = sum(_expire(pk, reason, by=None) for pk, reason in due)
     logger.info("expired %s listings", expired)
     return expired
+
+
+def _expire(pk: int, reason: str, by: User | None) -> bool:
+    """Expire one active or pending listing. False if its status changed in the meantime."""
+    try:
+        with transaction.atomic():
+            listing = _transition(
+                Listing(pk=pk),
+                Status.EXPIRED,
+                allowed_from={Status.ACTIVE, Status.PENDING_REVIEW},
+                by=by,
+                reason=reason,
+            )
+            # A licence that expires while waiting for review never went live.
+            _refund_unused_post_charge(listing, by)
+    except ListingError:
+        return False
+    return True
+
+
+# --- Re-checking licences with REGA ---------------------------------------------------
+
+
+def _rega_differences(listing: Listing, licence: RegaAdLicence) -> dict:
+    """REGA fields (other than the expiry date) where REGA now says something else.
+    These are not copied automatically; staff review them."""
+    diff = {}
+    for name, ours, theirs in (
+        ("purpose", listing.purpose, licence.purpose),
+        ("property_type", listing.property_type, licence.property_type),
+        ("area_m2", listing.area_m2, licence.area_m2),
+    ):
+        if ours != theirs:
+            diff[name] = [ours, theirs]
+    city, district = listing.city, listing.district
+    if not _same_place(city, licence.city_name_ar, licence.city_name_en):
+        diff["city"] = [city.name_en, licence.city_name_en]
+    if district is not None and not _same_place(
+        district, licence.district_name_ar, licence.district_name_en
+    ):
+        diff["district"] = [district.name_en, licence.district_name_en]
+    return diff
+
+
+def _same_place(place, name_ar: str, name_en: str) -> bool:
+    """Same matching rule as _match_location: Arabic name, or English name ignoring case."""
+    return place.name_ar == name_ar or place.name_en.lower() == name_en.lower()
+
+
+def resync_licence(listing: Listing, trigger: str, by: User | None = None) -> RegaSync:
+    """Read the listing's licence from REGA again and log the result as a RegaSync row.
+
+    - New expiry date at REGA (renewed or shortened): copied to the listing.
+    - Other REGA fields differ: logged as a mismatch for staff; the listing is not changed.
+    - Licence gone at REGA (cancelled): an active or pending listing is expired.
+    - REGA did not answer: nothing changes; the failure goes to the integration error log.
+    Safe to run any number of times.
+    """
+
+    def log(outcome, changes=None, error_code=""):
+        return RegaSync.objects.create(
+            listing=listing,
+            licence_number=listing.licence_number,
+            trigger=trigger,
+            outcome=outcome,
+            changes=changes or {},
+            error_code=error_code,
+            created_by=by,
+        )
+
+    try:
+        licence = get_rega_client().fetch_ad_licence(listing.licence_number)
+    except RegaError as exc:
+        if exc.code == "not_found":
+            _expire(listing.pk, "licence_cancelled", by=by)
+            listing.refresh_from_db()
+            return log(RegaSync.Outcome.NOT_FOUND)
+        error = exc
+    except Exception as exc:  # The live client may fail in ways we can't list.
+        error = exc
+    else:
+        error = None
+
+    if error is not None:
+        record_integration_error(
+            IntegrationError.Integration.REGA,
+            "fetch_ad_licence",
+            error,
+            reference=f"listing:{listing.reference}",
+        )
+        return log(RegaSync.Outcome.ERROR, error_code=getattr(error, "code", "") or "error")
+
+    changes = _rega_differences(listing, licence)
+    with transaction.atomic():
+        locked = Listing.objects.select_for_update().get(pk=listing.pk)
+        expiry_changed = locked.licence_expires_on != licence.expires_on
+        if expiry_changed:
+            changes["licence_expires_on"] = [
+                locked.licence_expires_on.isoformat(),
+                licence.expires_on.isoformat(),
+            ]
+        locked.licence_expires_on = licence.expires_on
+        locked.rega_data = licence.raw
+        locked.rega_synced_at = timezone.now()
+        locked.save(
+            update_fields=["licence_expires_on", "rega_data", "rega_synced_at", "updated_at"]
+        )
+        if licence.expires_on < riyadh_today():
+            outcome = RegaSync.Outcome.EXPIRED  # the nightly expiry job takes it down
+        elif set(changes) - {"licence_expires_on"}:
+            outcome = RegaSync.Outcome.MISMATCH
+        elif expiry_changed:
+            outcome = RegaSync.Outcome.UPDATED
+        else:
+            outcome = RegaSync.Outcome.OK
+        sync = log(outcome, changes)
+    listing.refresh_from_db()
+    return sync
+
+
+def resync_active_licences() -> dict[str, int]:
+    """Nightly: re-check the licence of every active or pending listing with REGA.
+    One listing failing never stops the rest. Returns how many ended with each outcome."""
+    counts: dict[str, int] = {}
+    listings = Listing.objects.filter(
+        status__in=(Status.ACTIVE, Status.PENDING_REVIEW)
+    ).select_related("city", "district")
+    for listing in listings.iterator(chunk_size=200):
+        try:
+            outcome = str(resync_licence(listing, RegaSync.Trigger.NIGHTLY).outcome)
+        except Exception:
+            logger.exception("REGA re-check failed for listing %s", listing.reference)
+            outcome = "crashed"
+        counts[outcome] = counts.get(outcome, 0) + 1
+    logger.info("REGA re-check: %s", counts)
+    return counts
+
+
+# --- Warning advertisers before a listing comes down ----------------------------------
+
+
+def _riyadh_date(dt) -> date:
+    return dt.astimezone(ZoneInfo(settings.DISPLAY_TIME_ZONE)).date()
+
+
+def coming_down(listing: Listing) -> tuple[date, str]:
+    """The (Riyadh) date an active listing comes down, and why: "licence" or "post_period"."""
+    options = [(listing.licence_expires_on, "licence")]
+    if listing.post_expires_at is not None:
+        options.append((_riyadh_date(listing.post_expires_at), "post_period"))
+    return min(options)
+
+
+def listings_to_warn() -> list[Listing]:
+    """Active listings that come down within LISTING_EXPIRY_WARNING_DAYS and whose
+    advertiser has not been warned about that date yet. Catches up if a day was missed."""
+    days = settings.LISTING_EXPIRY_WARNING_DAYS
+    today = riyadh_today()
+    last_day = today + timedelta(days=days)
+    # A generous database filter; the exact Riyadh-date check is done below.
+    post_cutoff = timezone.now() + timedelta(days=days + 1)
+    candidates = Listing.objects.filter(status=Status.ACTIVE).filter(
+        Q(licence_expires_on__lte=last_day) | Q(post_expires_at__lt=post_cutoff)
+    )
+    due = []
+    for listing in candidates:
+        expires_on = coming_down(listing)[0]
+        if today <= expires_on <= last_day and listing.expiry_warned_for != expires_on:
+            due.append(listing)
+    return due
+
+
+def send_expiry_warning(listing_id: int) -> str:
+    """WhatsApp the advertiser that this listing comes down soon. Safe to call again:
+    each expiry date is warned about once. Client errors propagate so the task retries.
+
+    Returns "sent" or "skipped" (no longer active, or already warned for this date).
+    """
+    with transaction.atomic():
+        # Lock only the listing row (broker is an optional join, which Postgres can't lock).
+        listing = (
+            Listing.objects.select_for_update(of=("self",))
+            .select_related("broker", "created_by")
+            .get(pk=listing_id)
+        )
+        if listing.status != Status.ACTIVE:
+            return "skipped"
+        expires_on, reason = coming_down(listing)
+        if listing.expiry_warned_for == expires_on:
+            return "skipped"
+        locale = "ar"
+        get_whatsapp_client().send_expiry_warning(
+            ExpiryWarning(
+                to=contact_number(listing),
+                listing_reference=listing.reference,
+                expires_on=expires_on,
+                reason=reason,
+                dashboard_url=f"{settings.SITE_URL}/{locale}/dashboard",
+                locale=locale,
+            )
+        )
+        listing.expiry_warned_for = expires_on
+        listing.save(update_fields=["expiry_warned_for", "updated_at"])
+    return "sent"
 
 
 # --- Editing -----------------------------------------------------------------------

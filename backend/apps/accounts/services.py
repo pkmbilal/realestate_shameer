@@ -13,6 +13,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from apps.core.models import IntegrationError
+from apps.core.services import record_integration_error
 from integrations.nafath import NafathStatus, get_nafath_client
 from integrations.sms import get_sms_client
 
@@ -64,7 +66,11 @@ def request_otp(raw_phone: str) -> None:
         )
 
     text = _("%(portal)s login code: %(code)s") % {"portal": settings.PORTAL_NAME, "code": code}
-    get_sms_client().send(phone, text)
+    try:
+        get_sms_client().send(phone, text)
+    except Exception as exc:
+        record_integration_error(IntegrationError.Integration.SMS, "send_otp", exc)
+        raise
 
 
 def verify_otp(raw_phone: str, code: str) -> User:
@@ -124,7 +130,14 @@ def start_nafath_verification(user: User, national_id: str) -> tuple[NafathVerif
     if user.is_nafath_verified:
         raise NafathError("already_verified")
 
-    request = get_nafath_client().start(national_id)
+    try:
+        request = get_nafath_client().start(national_id)
+    except Exception as exc:
+        # The national ID is never passed on; clean_message masks it if the error repeats it.
+        record_integration_error(
+            IntegrationError.Integration.NAFATH, "start", exc, reference=f"user:{user.pk}"
+        )
+        raise
     with transaction.atomic():
         # Only the newest request counts.
         user.nafath_verifications.filter(status=NafathVerification.Status.PENDING).update(
@@ -149,11 +162,21 @@ def check_nafath_verification(user: User, transaction_ref: str) -> NafathVerific
         if verification.status != NafathVerification.Status.PENDING:
             return verification
 
-        result = get_nafath_client().status(transaction_ref)
-        if result == NafathStatus.PENDING:
-            return verification
-        verification.status = NafathVerification.Status(result.value)
-        if result == NafathStatus.APPROVED:
-            verification.verified_at = timezone.now()
-        verification.save(update_fields=["status", "verified_at"])
+        try:
+            result = get_nafath_client().status(transaction_ref)
+        except Exception as exc:
+            failure = exc  # recorded after the transaction, so the log row is kept
+        else:
+            failure = None
+            if result == NafathStatus.PENDING:
+                return verification
+            verification.status = NafathVerification.Status(result.value)
+            if result == NafathStatus.APPROVED:
+                verification.verified_at = timezone.now()
+            verification.save(update_fields=["status", "verified_at"])
+    if failure is not None:
+        record_integration_error(
+            IntegrationError.Integration.NAFATH, "status", failure, reference=f"user:{user.pk}"
+        )
+        raise failure
     return verification
