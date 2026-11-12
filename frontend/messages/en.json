@@ -218,8 +218,7 @@
       "completion": "Completion",
       "rentPeriod": "Rent period"
     },
-    "views": "{count, plural, one {# view} other {# views}}",
-    "backToSearch": "Back to search"
+    "views": "{count, plural, one {# view} other {# views}}"
   },
   "Favourites": {
     "title": "Saved properties",
@@ -463,5 +462,18 @@
         "toWallet": "Go to wallet"
       }
     }
+  },
+  "Area": {
+    "districtInCity": "{district}, {city}",
+    "description": "Browse {what} {purpose} in {place}. {count, plural, =0 {No listings right now} one {# licensed listing} other {# licensed listings}}, each with a REGA ad licence.",
+    "home": "Home",
+    "breadcrumb": "Breadcrumb",
+    "byDistrict": "By district",
+    "byCity": "By city",
+    "otherTypes": "Other property types here",
+    "refine": "Filter results and map view",
+    "empty": "There are no listings here right now. Try a nearby area or another property type.",
+    "popular": "Popular searches",
+    "inPlace": "{what} {purpose} in {place}"
   }
 }

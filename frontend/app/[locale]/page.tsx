@@ -1,10 +1,21 @@
-import { useTranslations } from "next-intl";
+import type { Metadata } from "next";
+import { hasLocale, useTranslations } from "next-intl";
 
 import CityList from "@/components/locations/CityList";
+import PopularAreas from "@/components/seo/PopularAreas";
 import SiteHeader from "@/components/SiteHeader";
 import { Link } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 import { api, type City } from "@/lib/api/client";
 import { portalName } from "@/lib/config";
+
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+  return { alternates: { canonical: `/${locale}` } };
+}
 
 async function isApiHealthy() {
   try {
@@ -22,12 +33,27 @@ async function loadCities(): Promise<City[]> {
   }
 }
 
-export default async function HomePage() {
+export default async function HomePage({ params }: Props) {
+  const { locale } = await params;
   const [healthy, cities] = await Promise.all([isApiHealthy(), loadCities()]);
-  return <HomeContent healthy={healthy} cities={cities} />;
+  return (
+    <HomeContent
+      healthy={healthy}
+      cities={cities}
+      popular={hasLocale(routing.locales, locale) ? <PopularAreas locale={locale} /> : null}
+    />
+  );
 }
 
-function HomeContent({ healthy, cities }: { healthy: boolean; cities: City[] }) {
+function HomeContent({
+  healthy,
+  cities,
+  popular,
+}: {
+  healthy: boolean;
+  cities: City[];
+  popular: React.ReactNode;
+}) {
   const t = useTranslations("Home");
   const tn = useTranslations("Nav");
 
@@ -63,8 +89,9 @@ function HomeContent({ healthy, cities }: { healthy: boolean; cities: City[] }) 
         </div>
       </section>
 
-      <div className="pb-12">
+      <div className="flex flex-col gap-8 pb-12">
         <CityList cities={cities} />
+        {popular}
       </div>
 
       <footer className="flex items-center gap-2 text-sm text-slate-500">

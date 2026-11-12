@@ -12,6 +12,7 @@ api_patterns = [
     path("wallet/", include("apps.wallet.urls")),
     path("payments/", include("apps.payments.urls")),
     path("invoices/", include("apps.invoicing.urls")),
+    path("seo/", include("apps.seo.urls")),
 ]
 
 urlpatterns = [

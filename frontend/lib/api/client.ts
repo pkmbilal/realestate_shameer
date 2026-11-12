@@ -177,7 +177,32 @@ export type SearchParams = {
   page?: number;
 };
 
-export type PlaceRef = { id: number; name_ar: string; name_en: string; slug_en: string };
+export type PlaceRef = {
+  id: number;
+  name_ar: string;
+  name_en: string;
+  slug_en: string;
+  slug_ar: string;
+};
+
+// --- SEO ---------------------------------------------------------------------------
+
+export type AreaPlace = { slug_en: string; slug_ar: string; name_en: string; name_ar: string };
+
+/** Active-listing count for one area (purpose × type, optionally a city, then a district). */
+export type AreaCount = {
+  purpose: Purpose;
+  type: PropertyType;
+  city: AreaPlace | null;
+  district: AreaPlace | null;
+  count: number;
+};
+
+export type SitemapListings = {
+  count: number;
+  chunk_size: number;
+  results: { reference: string; updated_at: string }[];
+};
 
 export type Photo = { id: number; position: number; card_url: string; large_url: string };
 
@@ -433,6 +458,15 @@ export const api = {
     districts: (citySlug: string) =>
       request<District[]>(`/api/locations/cities/${encodeURIComponent(citySlug)}/districts/`, {
         next: { revalidate: 600 },
+      }),
+  },
+
+  seo: {
+    // Counts may lag new listings by up to 10 minutes (the API caches them as well).
+    areas: () => request<AreaCount[]>("/api/seo/areas/", { next: { revalidate: 600 } }),
+    sitemapListings: (page: number) =>
+      request<SitemapListings>(`/api/seo/sitemap/listings/${toQuery({ page })}`, {
+        next: { revalidate: 3600 },
       }),
   },
 
