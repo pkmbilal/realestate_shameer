@@ -22,6 +22,8 @@ import {
 } from "@/lib/api/client";
 import { localized } from "@/lib/format";
 import { parseSearchParams, parseView, type RawSearchParams } from "@/lib/search";
+import { type Area, localizedAreaPath } from "@/lib/seo/areas";
+import { languageAlternates, robotsFor } from "@/lib/seo/meta";
 
 const PAGE_SIZE = 20; // matches ListingPagination on the API
 
@@ -55,6 +57,15 @@ function isIndexable(params: SearchParams): boolean {
   return extra.length === 0 && (params.type?.length ?? 0) <= 1;
 }
 
+/** The area page that shows exactly these results (purpose + one type, maybe a city). */
+async function matchingArea(params: SearchParams): Promise<Area | null> {
+  const type = params.type?.length === 1 ? params.type[0] : undefined;
+  if (!params.purpose || !type) return null;
+  if (!params.city) return { purpose: params.purpose, type };
+  const city = (await loadCities()).find((c) => c.slug_en === params.city);
+  return city ? { purpose: params.purpose, type, city } : null;
+}
+
 async function pageTitle(locale: Locale, params: SearchParams, cities: City[]): Promise<string> {
   const t = await getTranslations({ locale, namespace: "Search" });
   const tp = await getTranslations({ locale, namespace: "Property" });
@@ -72,14 +83,27 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   if (!hasLocale(routing.locales, locale)) return {};
   const search = parseSearchParams(await searchParams);
   const title = await pageTitle(locale, search, await loadCities());
+  const indexable = isIndexable(search);
+  const area = indexable ? await matchingArea(search) : null;
+  if (area) {
+    // "Apartments for rent in Dammam" has its own area page; point search engines there.
+    return {
+      title,
+      alternates: {
+        canonical: localizedAreaPath(locale, area),
+        languages: languageAlternates((l) => localizedAreaPath(l, area)),
+      },
+      robots: robotsFor(true),
+    };
+  }
   const query = toQuery({ purpose: search.purpose, city: search.city, type: search.type });
   return {
     title,
     alternates: {
       canonical: `/${locale}/search${query}`,
-      languages: Object.fromEntries(routing.locales.map((l) => [l, `/${l}/search${query}`])),
+      languages: languageAlternates((l) => `/${l}/search${query}`),
     },
-    robots: isIndexable(search) ? undefined : { index: false, follow: true },
+    robots: robotsFor(indexable),
   };
 }
 

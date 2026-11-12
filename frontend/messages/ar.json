@@ -218,8 +218,7 @@
       "completion": "حالة البناء",
       "rentPeriod": "مدة الإيجار"
     },
-    "views": "{count, plural, one {مشاهدة واحدة} two {مشاهدتان} few {# مشاهدات} many {# مشاهدة} other {# مشاهدة}}",
-    "backToSearch": "العودة إلى البحث"
+    "views": "{count, plural, one {مشاهدة واحدة} two {مشاهدتان} few {# مشاهدات} many {# مشاهدة} other {# مشاهدة}}"
   },
   "Favourites": {
     "title": "العقارات المحفوظة",
@@ -463,5 +462,18 @@
         "toWallet": "الذهاب إلى المحفظة"
       }
     }
+  },
+  "Area": {
+    "districtInCity": "{district}، {city}",
+    "description": "تصفّح {what} {purpose} في {place}. عدد الإعلانات الحالية: {count}، وكل إعلان يحمل ترخيصًا من الهيئة العامة للعقار.",
+    "home": "الرئيسية",
+    "breadcrumb": "مسار التنقل",
+    "byDistrict": "حسب الحي",
+    "byCity": "حسب المدينة",
+    "otherTypes": "أنواع عقارات أخرى هنا",
+    "refine": "تصفية النتائج وعرض الخريطة",
+    "empty": "لا توجد إعلانات هنا حاليًا. جرّب منطقة قريبة أو نوع عقار آخر.",
+    "popular": "عمليات بحث شائعة",
+    "inPlace": "{what} {purpose} في {place}"
   }
 }

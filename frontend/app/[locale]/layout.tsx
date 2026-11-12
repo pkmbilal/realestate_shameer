@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { routing, rtlLocales } from "@/i18n/routing";
 import { portalName, siteUrl } from "@/lib/config";
+import { languageAlternates, openGraph, robotsFor } from "@/lib/seo/meta";
 
 import "../globals.css";
 
@@ -34,9 +35,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     metadataBase: new URL(siteUrl),
     title: { default: portalName, template: `%s | ${portalName}` },
     description: t("description"),
+    // No canonical here: it would be inherited by every page. Pages set their own.
     alternates: {
-      languages: Object.fromEntries(routing.locales.map((l) => [l, `/${l}`])),
+      languages: languageAlternates((l) => `/${l}`),
     },
+    robots: robotsFor(true),
+    openGraph: openGraph(locale, { title: portalName, description: t("description"), url: `/${locale}` }),
   };
 }
 

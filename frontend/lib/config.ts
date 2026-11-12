@@ -4,6 +4,9 @@ export const portalName = process.env.PORTAL_NAME ?? "PORTAL_NAME";
 // Public site address for canonical URLs, hreflang and JSON-LD (server only).
 export const siteUrl = (process.env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
+// Search engines may index the site only when this is "true" (production). Server only.
+export const allowIndexing = process.env.SEO_ALLOW_INDEXING === "true";
+
 // Map style for MapLibre. OpenFreeMap needs no API key.
 export const mapStyleUrl =
   process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? "https://tiles.openfreemap.org/styles/liberty";

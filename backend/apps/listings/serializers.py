@@ -41,13 +41,25 @@ class PlaceMixin(serializers.Serializer):
 
     def get_city(self, obj):
         c = obj.city
-        return {"id": c.pk, "name_ar": c.name_ar, "name_en": c.name_en, "slug_en": c.slug_en}
+        return {
+            "id": c.pk,
+            "name_ar": c.name_ar,
+            "name_en": c.name_en,
+            "slug_en": c.slug_en,
+            "slug_ar": c.slug_ar,
+        }
 
     def get_district(self, obj):
         d = obj.district
         if d is None:
             return None
-        return {"id": d.pk, "name_ar": d.name_ar, "name_en": d.name_en, "slug_en": d.slug_en}
+        return {
+            "id": d.pk,
+            "name_ar": d.name_ar,
+            "name_en": d.name_en,
+            "slug_en": d.slug_en,
+            "slug_ar": d.slug_ar,
+        }
 
     def get_latitude(self, obj):
         return obj.location.y

@@ -13,10 +13,13 @@ import PriceTag from "@/components/listings/PriceTag";
 import RegaBadge from "@/components/listings/RegaBadge";
 import { listingTitle } from "@/components/listings/title";
 import SiteHeader from "@/components/SiteHeader";
-import { Link } from "@/i18n/navigation";
+import Breadcrumbs, { type Crumb } from "@/components/seo/Breadcrumbs";
 import { type Locale, routing } from "@/i18n/routing";
-import { api, ApiError, type ListingDetail, toQuery } from "@/lib/api/client";
+import { api, ApiError, type ListingDetail } from "@/lib/api/client";
 import { siteUrl } from "@/lib/config";
+import { areaPath } from "@/lib/seo/areas";
+import { jsonLdHtml, languageAlternates, openGraph, robotsFor } from "@/lib/seo/meta";
+import { areaTitle } from "@/lib/seo/titles";
 import { formatNumber, localized } from "@/lib/format";
 
 type Props = { params: Promise<{ locale: string; reference: string }> };
@@ -48,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, reference } = await params;
   if (!hasLocale(routing.locales, locale)) return {};
   const listing = await loadListing(reference);
-  if (!listing) return { robots: { index: false } };
+  if (!listing) return { robots: robotsFor(false) };
 
   const title = await titleFor(listing, locale);
   const path = (l: string) => `/${l}/listings/${listing.reference}`;
@@ -58,16 +61,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: summary(listing, locale) || undefined,
     alternates: {
       canonical: path(locale),
-      languages: Object.fromEntries(routing.locales.map((l) => [l, path(l)])),
+      languages: languageAlternates(path),
     },
-    openGraph: {
-      type: "website",
+    openGraph: openGraph(locale, {
       title,
+      description: summary(listing, locale) || undefined,
       url: path(locale),
-      locale: locale === "ar" ? "ar_SA" : "en_SA",
-      images: cover ? [{ url: cover, width: 1600, height: 1200 }] : undefined,
-    },
+      image: cover ? { url: cover, width: 1600, height: 1200 } : null,
+    }),
   };
+}
+
+/** Area pages above this listing: "Apartments for sale in Dammam" › district › this listing. */
+async function listingCrumbs(listing: ListingDetail, locale: Locale): Promise<Crumb[]> {
+  const base = { purpose: listing.purpose, type: listing.property_type, city: listing.city };
+  const crumbs: Crumb[] = [{ label: await areaTitle(locale, base), href: areaPath(locale, base) }];
+  if (listing.district) {
+    crumbs.push({
+      label: localized(listing.district.name_ar, listing.district.name_en, locale),
+      href: areaPath(locale, { ...base, district: listing.district }),
+    });
+  }
+  crumbs.push({ label: listing.reference });
+  return crumbs;
 }
 
 function jsonLd(listing: ListingDetail, locale: string, title: string) {
@@ -151,18 +167,10 @@ export default async function ListingPage({ params }: Props) {
         <SiteHeader />
         <script
           type="application/ld+json"
-          // JSON.stringify output is safe here once "<" is escaped.
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLd(listing, locale, title)).replace(/</g, "\\u003c"),
-          }}
+          dangerouslySetInnerHTML={jsonLdHtml(jsonLd(listing, locale, title))}
         />
 
-        <Link
-          href={`/search${toQuery({ purpose: listing.purpose, city: listing.city.slug_en })}`}
-          className="w-fit text-sm font-medium text-emerald-700 hover:underline"
-        >
-          {t("backToSearch")}
-        </Link>
+        <Breadcrumbs locale={locale} items={await listingCrumbs(listing, locale)} />
 
         <Gallery photos={listing.photos} title={title} />
 
