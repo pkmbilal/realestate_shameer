@@ -16,6 +16,7 @@ from .models import (
     ListingPhoto,
     ListingStatusChange,
     PendingListing,
+    RegaSync,
 )
 
 
@@ -32,6 +33,22 @@ class StatusChangeInline(admin.TabularInline):
 
     def has_add_permission(self, request, obj=None):
         return False
+
+
+class RegaSyncInline(admin.TabularInline):
+    model = RegaSync
+    fields = ("created_at", "trigger", "outcome", "changes", "error_code", "created_by")
+    readonly_fields = fields
+    extra = 0
+    can_delete = False
+    max_num = 0
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("created_by")
 
 
 class PhotoInline(admin.TabularInline):
@@ -99,6 +116,21 @@ def take_down_listings(modeladmin, request, queryset):
     )
 
 
+@admin.action(description=_("Re-check licence with REGA"))
+def resync_with_rega(modeladmin, request, queryset):
+    counts: dict[str, int] = {}
+    for listing in queryset.select_related("city", "district"):
+        sync = services.resync_licence(listing, RegaSync.Trigger.MANUAL, by=request.user)
+        label = sync.get_outcome_display()
+        counts[label] = counts.get(label, 0) + 1
+        if sync.outcome in (RegaSync.Outcome.ERROR, RegaSync.Outcome.MISMATCH):
+            modeladmin.message_user(
+                request, f"{listing.reference}: {label}", level=messages.WARNING
+            )
+    summary = ", ".join(f"{label}: {n}" for label, n in counts.items())
+    modeladmin.message_user(request, f"REGA: {summary}", level=messages.INFO)
+
+
 READONLY = (
     "reference",
     "status",
@@ -131,6 +163,7 @@ READONLY = (
     "post_expires_at",
     "refreshed_at",
     "featured_until",
+    "expiry_warned_for",
     "view_count",
     "created_at",
     "updated_at",
@@ -160,8 +193,8 @@ class ListingAdmin(admin.ModelAdmin):
     search_fields = ("reference", "licence_number", "title_ar", "title_en")
     readonly_fields = READONLY
     fields = READONLY
-    inlines = (PhotoInline, StatusChangeInline)
-    actions = (approve_listings, reject_listings, take_down_listings)
+    inlines = (PhotoInline, StatusChangeInline, RegaSyncInline)
+    actions = (approve_listings, reject_listings, take_down_listings, resync_with_rega)
     date_hierarchy = "created_at"
 
     def has_add_permission(self, request):
@@ -195,6 +228,35 @@ class ListingStatusChangeAdmin(admin.ModelAdmin):
     list_filter = ("to_status",)
     list_select_related = ("listing", "changed_by")
     search_fields = ("listing__reference", "reason")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RegaSync)
+class RegaSyncAdmin(admin.ModelAdmin):
+    """Every licence read from REGA: at creation, nightly and by staff. Read-only.
+    Filter by "Mismatch (review)" to find listings whose REGA data changed."""
+
+    list_display = (
+        "created_at",
+        "listing",
+        "licence_number",
+        "trigger",
+        "outcome",
+        "changes",
+        "error_code",
+    )
+    list_filter = ("outcome", "trigger")
+    list_select_related = ("listing",)
+    search_fields = ("listing__reference", "licence_number")
+    date_hierarchy = "created_at"
 
     def has_add_permission(self, request):
         return False

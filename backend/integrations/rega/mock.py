@@ -24,18 +24,22 @@ NOT_FOUND_SUFFIX = "0000"
 EXPIRED_SUFFIX = "9999"
 OTHER_ADVERTISER_SUFFIX = "8888"
 OTHER_ADVERTISER_FAL = "1199999999"
+UNAVAILABLE_SUFFIX = "7777"
 
 
 class MockRegaClient(RegaClient):
     """Local development: invents stable licence data from the number itself.
 
     The same number always gives the same answer. Endings: 0000 = not found,
-    9999 = expired yesterday, 8888 = issued to another broker's FAL licence.
+    9999 = expired yesterday, 8888 = issued to another broker's FAL licence,
+    7777 = REGA does not answer.
     """
 
     def fetch_ad_licence(self, licence_number: str) -> RegaAdLicence:
         if licence_number.endswith(NOT_FOUND_SUFFIX):
             raise RegaError("not_found")
+        if licence_number.endswith(UNAVAILABLE_SUFFIX):
+            raise RegaError("unavailable")
 
         seed = int(hashlib.sha256(licence_number.encode()).hexdigest(), 16)
         city_ar, city_en, district_ar, district_en, lat, lng = _PLACES[seed % len(_PLACES)]

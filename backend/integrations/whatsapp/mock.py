@@ -2,7 +2,7 @@ import logging
 
 from apps.accounts.phone import mask_phone
 
-from .base import LeadNotification, WhatsAppClient
+from .base import ExpiryWarning, LeadNotification, WhatsAppClient
 
 logger = logging.getLogger(__name__)
 
@@ -20,4 +20,13 @@ class MockWhatsAppClient(WhatsAppClient):
             notification.channel,
             notification.listing_reference,
             mask_phone(notification.buyer_phone) if notification.buyer_phone else "-",
+        )
+
+    def send_expiry_warning(self, warning: ExpiryWarning) -> None:
+        logger.info(
+            "[mock whatsapp] to %s: listing %s expires on %s (%s)",
+            mask_phone(warning.to),
+            warning.listing_reference,
+            warning.expires_on.isoformat(),
+            warning.reason,
         )

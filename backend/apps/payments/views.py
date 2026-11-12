@@ -11,6 +11,8 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsVerifiedAdvertiser
+from apps.core.models import IntegrationError
+from apps.core.services import record_integration_error
 from integrations.payments import GatewayStatus, WebhookError, get_payments_client
 from integrations.payments.mock import MockPaymentsClient
 from integrations.zatca.base import halalas_to_sar
@@ -89,7 +91,12 @@ class WebhookView(APIView):
     def post(self, request):
         try:
             ref = get_payments_client().parse_webhook(request.data)
-        except WebhookError:
+        except WebhookError as exc:
+            # Could be an attack or a wrong webhook secret; either way staff should know.
+            # `once` keeps a flood of bad requests from flooding the table.
+            record_integration_error(
+                IntegrationError.Integration.PAYMENTS, "webhook_verification", exc, once=True
+            )
             return Response({"code": "forbidden"}, status=status.HTTP_403_FORBIDDEN)
         services.confirm_by_ref(ref)
         return Response({"ok": True})
