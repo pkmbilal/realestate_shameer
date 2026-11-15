@@ -12,11 +12,12 @@ type Gate =
   | { state: "login" }
   | { state: "verify" }
   | { state: "profile" }
+  | { state: "agency" }
   | { state: "ready" };
 
 /**
  * Shows the dashboard only to people who may post listings: logged in, verified through
- * Nafath, and an owner, broker (with a profile) or agency admin. Everyone else gets a
+ * Nafath, and an owner, broker (with a profile) or agency admin (with an agency). Everyone else gets a
  * short explanation and a link to the next step. Runs in the browser because the login
  * cookie belongs to the API.
  */
@@ -51,6 +52,14 @@ export default function AdvertiserGate({
           return { state: "error" };
         }
       }
+      if (me.role === "agency_admin") {
+        try {
+          await api.brokers.agency();
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 404) return { state: "agency" };
+          return { state: "error" };
+        }
+      }
       return { state: "ready" };
     }
     void check().then(setGate);
@@ -66,6 +75,7 @@ export default function AdvertiserGate({
     login: { text: t("loginNeeded"), cta: t("login"), href: `/login?next=${encodeURIComponent(next)}` },
     verify: { text: t("verifyNeeded"), cta: t("verify"), href: "/account/verify" },
     profile: { text: t("profileNeeded"), cta: t("profile"), href: "/account/broker-profile" },
+    agency: { text: t("agencyNeeded"), cta: t("agency"), href: "/account/agency" },
   }[gate.state];
 
   return (

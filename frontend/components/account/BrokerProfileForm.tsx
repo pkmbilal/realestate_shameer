@@ -164,6 +164,13 @@ export default function BrokerProfileForm({ cities }: { cities: City[] }) {
       >
         {t("save")}
       </button>
+
+      <p className="text-sm text-slate-600">
+        {t("agencyQuestion")}{" "}
+        <Link href="/account/agency" className="font-medium text-emerald-700 hover:underline">
+          {t("agencyLink")}
+        </Link>
+      </p>
     </form>
   );
 }

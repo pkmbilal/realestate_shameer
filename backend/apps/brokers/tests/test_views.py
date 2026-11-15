@@ -150,3 +150,47 @@ def test_cannot_remove_member_of_other_agency():
     other = BrokerProfileFactory(agency=AgencyFactory())
     response = api(AgencyFactory().admin).delete(reverse("agency-member-detail", args=[other.pk]))
     assert response.status_code == 404
+
+
+def agency_payload(**overrides):
+    return {
+        "name_ar": "مكتب الشرقية",
+        "name_en": "Eastern Office",
+        "logo_url": "",
+        "cr_number": "2050999888",
+        "fal_licence": "1200999888",
+        **overrides,
+    }
+
+
+def test_agency_duplicate_cr_and_fal_are_field_errors():
+    """The agency form shows these next to the right fields, so they must be keyed by field."""
+    existing = AgencyFactory()
+    response = api(VerifiedUserFactory()).put(
+        reverse("agency-me"),
+        agency_payload(cr_number=existing.cr_number, fal_licence=existing.fal_licence),
+        format="json",
+    )
+    assert response.status_code == 400
+    assert set(response.json()) == {"cr_number", "fal_licence"}
+
+
+def test_agency_update_keeps_own_cr_number():
+    agency = AgencyFactory()
+    response = api(agency.admin).put(
+        reverse("agency-me"),
+        agency_payload(cr_number=agency.cr_number, fal_licence=agency.fal_licence, name_en="New"),
+        format="json",
+    )
+    assert response.status_code == 200
+    agency.refresh_from_db()
+    assert agency.name_en == "New"
+
+
+def test_add_member_from_other_agency_is_refused():
+    BrokerProfileFactory(user__phone="+966511111333", agency=AgencyFactory())
+    response = api(AgencyFactory().admin).post(
+        reverse("agency-members"), {"phone": "0511111333"}, format="json"
+    )
+    assert response.status_code == 400
+    assert response.json() == {"code": "broker_in_other_agency"}

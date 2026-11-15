@@ -60,7 +60,8 @@
       "already_verified": "Your identity is already verified.",
       "rate_limited": "Too many requests. Please wait a little and try again.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "continueToAgency": "I run an agency"
   },
   "BrokerProfile": {
     "title": "Broker profile",
@@ -86,7 +87,57 @@
     },
     "save": "Save profile",
     "saved": "Your profile has been saved.",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "agencyQuestion": "Do you run a brokerage office?",
+    "agencyLink": "Create an agency profile"
+  },
+  "AgencyProfile": {
+    "title": "Agency profile",
+    "intro": "Your brokerage office as buyers see it, and the brokers who work for it.",
+    "createIntro": "Create your agency to post listings in its name and add your brokers. You will become the agency admin.",
+    "needsVerification": "You need to verify your identity with Nafath before creating an agency profile.",
+    "verifyNow": "Verify with Nafath",
+    "logoAlt": "Agency logo",
+    "fields": {
+      "name_ar": "Agency name (Arabic)",
+      "name_en": "Agency name (English)",
+      "cr_number": "Commercial Registration (CR) number",
+      "fal_licence": "Agency FAL licence number",
+      "logo_url": "Logo link (optional)"
+    },
+    "errors": {
+      "name_ar": "Please enter the agency name in Arabic.",
+      "name_en": "Please enter the agency name in English.",
+      "cr_number": "Enter a valid 10-digit CR number that is not already registered.",
+      "fal_licence": "Enter a valid FAL licence number (digits only) that is not already registered.",
+      "logo_url": "Please enter a valid link, or leave it empty."
+    },
+    "create": "Create agency",
+    "save": "Save agency",
+    "created": "Your agency has been created. You can now add your brokers below.",
+    "saved": "Your agency has been saved.",
+    "generic": "Something went wrong. Please try again.",
+    "members": {
+      "title": "Brokers",
+      "intro": "Brokers in your agency show the agency name on their profile.",
+      "empty": "No brokers yet.",
+      "loadFailed": "We couldn't load your brokers. Please refresh the page.",
+      "fal": "FAL",
+      "remove": "Remove",
+      "confirmRemove": "Yes, remove",
+      "cancel": "Cancel",
+      "removeFailed": "We couldn't remove this broker. Please try again.",
+      "addLabel": "Add a broker by mobile number",
+      "addHint": "The broker must first log in and create their own broker profile.",
+      "add": "Add broker",
+      "added": "The broker has been added.",
+      "errors": {
+        "invalid_phone": "Please enter a valid Saudi mobile number.",
+        "broker_not_found": "No broker profile uses this number. Ask the broker to create one first.",
+        "broker_in_other_agency": "This broker already belongs to another agency.",
+        "generic": "Something went wrong. Please try again."
+      }
+    }
   },
   "Nav": {
     "search": "Search",
@@ -295,7 +346,9 @@
       "verifyNeeded": "Verify your identity with Nafath before posting listings.",
       "verify": "Verify with Nafath",
       "profileNeeded": "Complete your broker profile before posting listings.",
-      "profile": "Complete profile"
+      "profile": "Complete profile",
+      "agencyNeeded": "Complete your agency profile before posting listings.",
+      "agency": "Complete agency profile"
     },
     "start": {
       "title": "New listing",
