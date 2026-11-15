@@ -528,5 +528,124 @@
     "empty": "There are no listings here right now. Try a nearby area or another property type.",
     "popular": "Popular searches",
     "inPlace": "{what} {purpose} in {place}"
+  },
+  "Footer": {
+    "legalNav": "Legal",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy",
+    "rega": "REGA licence",
+    "regaLicence": "REGA e-advertising platform licence no.",
+    "regaLicencePending": "REGA e-advertising platform licence: application in progress.",
+    "copyright": "© {year} {name}. All rights reserved."
+  },
+  "Legal": {
+    "lastUpdated": "Last updated: {date}",
+    "draftNotice": "Draft: this page is placeholder text. The final wording will be published before launch.",
+    "terms": {
+      "title": "Terms of use",
+      "description": "The rules for using the site to search for property and to post property ads.",
+      "updated": "2026-11-15",
+      "draft": true,
+      "sections": [
+        {
+          "heading": "About these terms",
+          "paragraphs": [
+            "By using this site you agree to these terms. If you do not agree, please do not use the site."
+          ]
+        },
+        {
+          "heading": "Using the site",
+          "paragraphs": [
+            "The site lets you search for property for sale or rent in Saudi Arabia and contact the advertisers. We do not own the properties listed and are not a party to any deal between you and an advertiser."
+          ]
+        },
+        {
+          "heading": "Advertisers",
+          "paragraphs": [
+            "Only advertisers verified through Nafath may post ads. Every ad must carry a valid REGA advertising licence, and its details must match that licence.",
+            "Ads whose licence has expired, or that break REGA rules, are hidden or removed."
+          ]
+        },
+        {
+          "heading": "Credits and payments",
+          "paragraphs": [
+            "Advertisers can buy prepaid credits to post, refresh and feature ads. A ZATCA-compliant tax invoice is issued for every purchase. Refund rules will be set out here."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "paragraphs": [
+            "Contact details will be added here."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "description": "What personal data we collect, why, how long we keep it and your rights under the PDPL.",
+      "updated": "2026-11-15",
+      "draft": true,
+      "sections": [
+        {
+          "heading": "Data we collect",
+          "paragraphs": [
+            "Your mobile number (to log in), and if you advertise, your Nafath verification status and your broker or agency details. We do not store national ID numbers."
+          ]
+        },
+        {
+          "heading": "Why we use it",
+          "paragraphs": [
+            "To log you in, to show and manage ads, to pass your enquiries to advertisers, to issue tax invoices and to meet REGA rules."
+          ]
+        },
+        {
+          "heading": "Where it is stored",
+          "paragraphs": [
+            "All data is stored on servers inside the Kingdom of Saudi Arabia."
+          ]
+        },
+        {
+          "heading": "How long we keep it",
+          "paragraphs": [
+            "Retention periods will be set out here."
+          ]
+        },
+        {
+          "heading": "Your rights",
+          "paragraphs": [
+            "Under the Personal Data Protection Law (PDPL) you can ask to see, correct or delete your data. How to make a request will be set out here."
+          ]
+        }
+      ]
+    },
+    "rega": {
+      "title": "REGA licence",
+      "description": "The platform's licence from the Real Estate General Authority (REGA) and how ad licences work.",
+      "updated": "2026-11-15",
+      "draft": true,
+      "platformLicence": "REGA e-advertising platform licence",
+      "platformLicencePending": "Application in progress. The licence number will be shown here once issued.",
+      "regaLink": "Real Estate General Authority website",
+      "sections": [
+        {
+          "heading": "Ad licences",
+          "paragraphs": [
+            "Every property ad on the site carries its own REGA advertising licence number, shown on the listing page. The ad details come from REGA and cannot be changed by the advertiser."
+          ]
+        },
+        {
+          "heading": "Expired licences",
+          "paragraphs": [
+            "Ads are hidden automatically when their licence expires."
+          ]
+        },
+        {
+          "heading": "Reporting an ad",
+          "paragraphs": [
+            "If an ad looks wrong or breaks the rules, please contact us. How to report it will be set out here."
+          ]
+        }
+      ]
+    }
   }
 }

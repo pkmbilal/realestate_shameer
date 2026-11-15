@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import SiteFooter from "@/components/SiteFooter";
 import { routing, rtlLocales } from "@/i18n/routing";
 import { portalName, siteUrl } from "@/lib/config";
 import { languageAlternates, openGraph, robotsFor } from "@/lib/seo/meta";
@@ -52,7 +53,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} dir={rtlLocales.includes(locale) ? "rtl" : "ltr"}>
       <body className={`${plexArabic.variable} bg-white font-sans text-slate-900 antialiased`}>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {children}
+          <SiteFooter />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

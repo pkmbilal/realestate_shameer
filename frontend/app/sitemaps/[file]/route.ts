@@ -1,9 +1,10 @@
 /**
  * The sitemaps listed in /sitemap.xml:
- *   /sitemaps/pages.xml       home and search
+ *   /sitemaps/pages.xml       home, search and the legal pages
  *   /sitemaps/areas.xml       area pages that have listings
  *   /sitemaps/listings-N.xml  active listings, 5,000 per file
  */
+import { LEGAL_SLUGS } from "@/lib/legal";
 import { type Locale, routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { localizedAreaPath, rowToArea } from "@/lib/seo/areas";
@@ -18,7 +19,9 @@ const perLocale = (pathFor: (locale: Locale) => string) =>
 
 async function entriesFor(file: string): Promise<SitemapEntry[] | null> {
   if (file === "pages.xml") {
-    return [{ paths: perLocale((l) => `/${l}`) }, { paths: perLocale((l) => `/${l}/search`) }];
+    return ["", "/search", ...Object.values(LEGAL_SLUGS).map((slug) => `/${slug}`)].map(
+      (path) => ({ paths: perLocale((l) => `/${l}${path}`) }),
+    );
   }
 
   if (file === "areas.xml") {
