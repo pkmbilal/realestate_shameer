@@ -87,6 +87,12 @@ export default function NafathVerifyForm() {
         >
           {t("continueToProfile")}
         </Link>
+        <Link
+          href="/account/agency"
+          className="rounded-lg border border-slate-300 px-4 py-3 text-center font-medium hover:bg-slate-50"
+        >
+          {t("continueToAgency")}
+        </Link>
       </div>
     );
   }

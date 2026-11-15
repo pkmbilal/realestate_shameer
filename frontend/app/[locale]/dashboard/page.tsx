@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import AdvertiserGate from "@/components/dashboard/AdvertiserGate";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import MyListings from "@/components/dashboard/MyListings";
+import ProfileLink from "@/components/dashboard/ProfileLink";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -29,12 +30,9 @@ export default async function DashboardPage({ params }: Props) {
       title={t("title")}
       actions={
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/account/broker-profile"
-            className="rounded-lg border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50"
-          >
+          <ProfileLink className="rounded-lg border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50">
             {t("profile")}
-          </Link>
+          </ProfileLink>
           <Link
             href="/dashboard/wallet"
             className="rounded-lg border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50"

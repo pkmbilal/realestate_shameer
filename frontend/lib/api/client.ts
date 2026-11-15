@@ -116,6 +116,27 @@ export type BrokerProfileInput = {
 
 export type BrokerProfile = BrokerProfileInput & { id: number; agency: AgencySummary | null };
 
+export type AgencyInput = {
+  name_ar: string;
+  name_en: string;
+  logo_url: string;
+  /** Commercial Registration number, 10 digits. */
+  cr_number: string;
+  fal_licence: string;
+};
+
+export type Agency = AgencyInput & { id: number };
+
+/** A broker in my agency, as the agency admin sees them. The phone stays masked. */
+export type AgencyMember = {
+  id: number;
+  name_ar: string;
+  name_en: string;
+  photo_url: string;
+  fal_licence: string;
+  masked_whatsapp: string;
+};
+
 export type LatLng = { lat: number; lng: number };
 
 export type City = {
@@ -595,6 +616,17 @@ export const api = {
     me: () => request<BrokerProfile>("/api/brokers/me/", { cache: "no-store" }),
     saveMe: (profile: BrokerProfileInput) =>
       request<BrokerProfile>("/api/brokers/me/", { method: "PUT", json: profile }),
+    /** The agency I run. 404 if I don't have one yet. */
+    agency: () => request<Agency>("/api/brokers/agency/", { cache: "no-store" }),
+    /** Create or update my agency. The first save makes me its admin. */
+    saveAgency: (agency: AgencyInput) =>
+      request<Agency>("/api/brokers/agency/", { method: "PUT", json: agency }),
+    members: () => request<AgencyMember[]>("/api/brokers/agency/members/", { cache: "no-store" }),
+    /** Add a broker (who already has a broker profile) by their phone number. */
+    addMember: (phone: string) =>
+      request<AgencyMember>("/api/brokers/agency/members/", { method: "POST", json: { phone } }),
+    removeMember: (id: number) =>
+      request<void>(`/api/brokers/agency/members/${id}/`, { method: "DELETE" }),
   },
 
   auth: {
