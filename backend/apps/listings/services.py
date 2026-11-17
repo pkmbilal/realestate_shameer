@@ -784,6 +784,14 @@ def delete_photo(listing: Listing, by: User, photo_id: int) -> None:
 # --- Public ---------------------------------------------------------------------------
 
 
+_BOT_UA = re.compile(r"bot|crawl|spider|slurp|curl|wget|python-requests|headless|preview", re.I)
+
+
+def is_bot(user_agent: str) -> bool:
+    """Crawlers and scripts should not inflate a listing's view count."""
+    return not user_agent or bool(_BOT_UA.search(user_agent))
+
+
 def record_view(listing: Listing) -> None:
     Listing.objects.filter(pk=listing.pk).update(view_count=F("view_count") + 1)
 

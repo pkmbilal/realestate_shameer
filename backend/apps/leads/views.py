@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.throttling import BaseThrottle
+from rest_framework.throttling import BaseThrottle, ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.listings.models import Listing
@@ -19,6 +19,8 @@ class CreateLeadView(APIView):
     """
 
     permission_classes = [AllowAny]
+    # The scope alone does nothing: ScopedRateThrottle must be listed to enforce the rate.
+    throttle_classes = [ScopedRateThrottle]
     throttle_scope = "lead_create"
 
     def post(self, request):

@@ -265,8 +265,9 @@ class PublicListingDetailView(RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         listing = self.get_object()
-        services.record_view(listing)
-        listing.view_count += 1
+        if not services.is_bot(request.META.get("HTTP_USER_AGENT", "")):
+            services.record_view(listing)
+            listing.view_count += 1
         return Response(self.get_serializer(listing).data)
 
 

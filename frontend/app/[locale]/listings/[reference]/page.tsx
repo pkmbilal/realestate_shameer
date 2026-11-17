@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -28,7 +29,8 @@ type Props = { params: Promise<{ locale: string; reference: string }> };
 const loadListing = cache(async (reference: string): Promise<ListingDetail | null> => {
   if (!/^[2-9A-HJ-NP-Z]{8}$/.test(reference)) return null;
   try {
-    return await api.listings.detail(reference);
+    const userAgent = (await headers()).get("user-agent") ?? undefined;
+    return await api.listings.detail(reference, userAgent);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
