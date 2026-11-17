@@ -527,10 +527,14 @@ export const api = {
       request<Page<ListingCard>>(`/api/listings/${toQuery(params)}`, { cache: "no-store" }),
     map: (params: SearchParams & { bbox: string }) =>
       request<{ results: MapPin[]; truncated: boolean }>(`/api/listings/map/${toQuery(params)}`),
-    /** Each call counts as a page view, so call it once per page render. */
-    detail: (reference: string) =>
+    /**
+     * Each call counts as a page view, so call it once per page render. Pass the visitor's
+     * User-Agent so the API can skip crawlers (it would otherwise see this server's own).
+     */
+    detail: (reference: string, userAgent?: string) =>
       request<ListingDetail>(`/api/listings/${encodeURIComponent(reference)}/`, {
         cache: "no-store",
+        headers: userAgent ? { "User-Agent": userAgent } : undefined,
       }),
     amenities: () => request<Amenity[]>("/api/listings/amenities/", { cache: "no-store" }),
   },

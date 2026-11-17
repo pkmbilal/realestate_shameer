@@ -1,14 +1,16 @@
+from unittest.mock import patch
+
 import pytest
 from django.contrib.admin.sites import site
 from django.test import RequestFactory
 from django.urls import reverse
 from rest_framework.test import APIClient
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.accounts.models import User
 from apps.accounts.tests.factories import UserFactory
 from apps.leads.admin import LeadAdmin
 from apps.leads.models import Lead
-from apps.leads.views import CreateLeadView
 from apps.listings.models import Listing
 from apps.listings.tests.factories import ListingFactory
 
@@ -80,8 +82,15 @@ def test_unknown_channel_is_400():
     assert res.status_code == 400
 
 
-def test_endpoint_is_rate_limited():
-    assert CreateLeadView.throttle_scope == "lead_create"
+def test_endpoint_is_rate_limited(queued):
+    # A throttle_scope alone enforces nothing; prove the 429 really happens.
+    listing = broker_listing()
+    body = {"listing": listing.reference, "channel": "whatsapp"}
+    with patch.dict(ScopedRateThrottle.THROTTLE_RATES, {"lead_create": "2/hour"}):
+        assert post(body).status_code == 201
+        assert post(body).status_code == 201
+        assert post(body).status_code == 429
+    assert Lead.objects.count() == 1  # the second click is a duplicate of the first
 
 
 def test_public_listing_does_not_expose_broker_number():

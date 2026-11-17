@@ -16,6 +16,8 @@ from .factories import ListingFactory, ListingPhotoFactory
 
 pytestmark = pytest.mark.django_db
 
+BROWSER_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari"
+
 
 def api(user=None):
     client = APIClient()
@@ -200,7 +202,7 @@ def test_public_list_filters():
 def test_public_detail_has_licence_badge_and_counts_views():
     listing = make_active()
     url = reverse("listing-detail", args=[listing.reference])
-    body = api().get(url).json()
+    body = api().get(url, HTTP_USER_AGENT=BROWSER_UA).json()
     assert body["licence_number"] == listing.licence_number
     assert body["licence_expires_on"] == listing.licence_expires_on.isoformat()
     assert body["advertiser"]["type"] == "owner"
@@ -208,7 +210,21 @@ def test_public_detail_has_licence_badge_and_counts_views():
     # No personal data on the public page.
     assert "created_by" not in body
     assert listing.created_by.phone not in str(body)
-    assert api().get(url).json()["view_count"] == 2
+    assert api().get(url, HTTP_USER_AGENT=BROWSER_UA).json()["view_count"] == 2
+
+
+@pytest.mark.parametrize(
+    "user_agent",
+    ["", "Googlebot/2.1 (+http://www.google.com/bot.html)", "curl/8.4.0", "python-requests/2.31"],
+)
+def test_public_detail_does_not_count_bot_views(user_agent):
+    listing = make_active()
+    url = reverse("listing-detail", args=[listing.reference])
+    response = api().get(url, HTTP_USER_AGENT=user_agent)
+    assert response.status_code == 200
+    assert response.json()["view_count"] == 0
+    listing.refresh_from_db()
+    assert listing.view_count == 0
 
 
 def test_public_detail_hides_drafts():
